@@ -1,0 +1,28 @@
+name: Something went wrong
+description: cmp stopped, did something unexpected, or a restore didn't bring an app back.
+labels: ["bug"]
+body:
+  - type: input
+    id: phone
+    attributes:
+      label: Phone and Android version
+      placeholder: realme 7 (RMX2151), Android 12
+    validations:
+      required: true
+  - type: input
+    id: computer
+    attributes:
+      label: Computer and assistant
+      placeholder: macOS 15 + Claude Code / Windows 11 + Gemini CLI / no assistant
+  - type: textarea
+    id: output
+    attributes:
+      label: The last lines cmp printed
+      description: From the step that went wrong, including RESULT / SUMMARY / NEXT. Remove your serial number if it appears.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected

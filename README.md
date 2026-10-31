@@ -72,8 +72,10 @@ On Windows use `.\cmp.ps1` instead of `./cmp`. Every step also exists on its own
 | [Any Android phone](devices/generic-android-starter/debloat.txt) | 7+ | 🧪 starter, untested |
 
 Starter lists are never applied blindly: `cmp discover` only proposes what is actually on your
-phone, preinstalled, and you review it first. Tested one on your phone? A PR with
-`devices/<brand>-<model>/` turns it into a tested list.
+phone, preinstalled, and you review it first.
+
+**Your phone isn't here?** Run it anyway, then [add your phone](https://github.com/alok722/cleanyourphone/issues/new?template=phone-list.yml)
+(or send a pull request, see [CONTRIBUTING.md](CONTRIBUTING.md)) so the next person with that phone skips the guesswork.
 
 ## Legal
 

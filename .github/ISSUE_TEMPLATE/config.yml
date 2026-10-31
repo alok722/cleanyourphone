@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question about your phone
+    url: https://github.com/alok722/cleanyourphone/discussions
+    about: Ask in Discussions

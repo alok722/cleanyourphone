@@ -1,0 +1,38 @@
+name: Add my phone
+description: You ran cleanyourphone on a phone that isn't listed yet. Share what you removed so the next person skips the guesswork.
+title: "Phone list: <brand> <model>"
+labels: ["phone-list"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks! A pull request with `devices/<brand>-<model>/debloat.txt` and `phone.json` is even better: see CONTRIBUTING.md.
+        Never paste your phone's serial number.
+  - type: input
+    id: phone
+    attributes:
+      label: Phone
+      description: Brand, model name and model number (`./cmp probe` prints them)
+      placeholder: Xiaomi Redmi 10 (220333QBI)
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Android and skin version
+      placeholder: Android 13, MIUI 14.0.7
+    validations:
+      required: true
+  - type: textarea
+    id: list
+    attributes:
+      label: What you removed
+      description: Paste `my-list.local.txt` (lines you kept start with `# keep:`)
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything that broke or needed restoring
+      description: Even "nothing, used it for a few days" is useful.
