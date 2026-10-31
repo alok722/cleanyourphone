@@ -1,0 +1,33 @@
+# Xiaomi / Redmi / POCO, MIUI 12-14 and HyperOS (global and India ROMs)
+# STARTER LIST, UNTESTED. Built from widely documented packages, not from a phone we tested.
+# Run `./cmp discover` instead of applying this directly: it proposes only what is on your phone,
+# and you review it first. Tested it on your phone? Send a PR as devices/<brand>-<model>/.
+#
+
+# Ads & tracking
+com.miui.analytics                             # MIUI analytics
+com.miui.msa.global                            # MSA, the system ad service behind in-app MIUI ads
+com.miui.android.fashiongallery                # Wallpaper carousel (lock-screen content and ads)
+com.mi.android.globalminusscreen               # App vault (left-of-home feed)
+com.miui.hybrid                                # Quick apps (instant web apps)
+com.miui.hybrid.accessory                      # Quick apps helper
+com.miui.yellowpage                            # Yellow pages / caller business info
+com.miui.bugreport                             # Bug report uploader
+com.miui.miservice                             # Services & feedback
+com.facebook.appmanager                        # Facebook preinstall stub
+com.facebook.services                          # Facebook preinstall stub
+com.facebook.system                            # Facebook preinstall stub
+
+# Xiaomi duplicate apps
+com.mi.globalbrowser                           # Mi Browser (ads); Chrome stays
+com.miui.player                                # Mi Music
+com.miui.videoplayer                           # Mi Video
+com.xiaomi.mipicks                             # GetApps store (ads); Play Store stays
+com.miui.cleanmaster                           # Cleaner (ads)
+com.xiaomi.glgm                                # Games
+
+# Xiaomi extras
+com.miui.weather2                              # Weather
+com.miui.compass                               # Compass
+com.xiaomi.midrop                              # ShareMe
+com.mipay.wallet.in                            # Mi Pay (India)

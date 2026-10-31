@@ -1,0 +1,8 @@
+{
+  "phone": "realme 7 (RMX2151)",
+  "brand": "realme",
+  "os": "Android 12, realme UI 3.0",
+  "status": "tested",
+  "models": ["RMX2151"],
+  "notes": "Glance, HeyTap push/browser/market, ROM statistics, Game Space, MediaTek test tools, Google Lens/Pay/Assistant; App Market and Theme Store need suspend"
+}

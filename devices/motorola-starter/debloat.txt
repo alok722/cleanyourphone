@@ -1,0 +1,16 @@
+# Motorola, My UX / near-stock Android 10-14
+# STARTER LIST, UNTESTED. Built from widely documented packages, not from a phone we tested.
+# Run `./cmp discover` instead of applying this directly: it proposes only what is on your phone,
+# and you review it first. Tested it on your phone? Send a PR as devices/<brand>-<model>/.
+#
+# Not listed on purpose: the Moto app (com.motorola.moto), which runs the gestures and Peek Display.
+
+# Ads & tracking
+com.motorola.ccc.notification                  # Moto notifications (promotional)
+com.facebook.appmanager                        # Facebook preinstall stub
+com.facebook.services                          # Facebook preinstall stub
+com.facebook.system                            # Facebook preinstall stub
+
+# Motorola extras
+com.motorola.genie                             # Device Help
+com.motorola.demo                              # Retail demo mode

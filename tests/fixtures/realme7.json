@@ -1,0 +1,110 @@
+{
+ "breaks": {
+  "com.fake.loadbearing": "home"
+ },
+ "buckets": {
+  "com.example.neveropened": 40,
+  "com.example.rarelyused": 40
+ },
+ "devices": "List of devices attached\nFAKESERIAL0RMX21       device usb:1048576X product:RMX2151 model:RMX2151 device:RMX2151L1 transport_id:2\n\n",
+ "disabled": [
+  "com.glance.internet"
+ ],
+ "installed_at": {
+  "com.example.neveropened": "2026-01-01 08:00:00",
+  "com.example.rarelyused": "2025-05-01 08:00:00",
+  "com.linkedin.android": "2025-01-01 08:00:00",
+  "com.whatsapp": "2024-01-01 08:00:00"
+ },
+ "last_used": {
+  "com.example.rarelyused": "2026-08-01 12:00:00",
+  "com.linkedin.android": "2026-10-20 09:00:00",
+  "com.whatsapp": "2026-10-31 10:00:00"
+ },
+ "launcher": [
+  "com.whatsapp",
+  "app.olauncher",
+  "com.linkedin.android",
+  "com.example.rarelyused",
+  "com.example.neveropened",
+  "com.android.settings"
+ ],
+ "packages": {
+  "system": [
+   "android",
+   "com.android.systemui",
+   "com.android.settings",
+   "com.android.phone",
+   "com.android.launcher",
+   "com.google.android.gms",
+   "com.android.vending",
+   "com.glance.internet",
+   "com.heytap.market",
+   "com.heytap.browser",
+   "com.coloros.weather2",
+   "com.google.android.inputmethod.latin",
+   "com.google.android.dialer",
+   "com.google.android.apps.messaging",
+   "com.coloros.compass2",
+   "com.heytap.themestore",
+   "com.fake.loadbearing"
+  ],
+  "user": [
+   "com.whatsapp",
+   "app.olauncher",
+   "com.linkedin.android",
+   "com.example.rarelyused",
+   "com.example.neveropened"
+  ]
+ },
+ "refuse": {
+  "disable": [
+   "com.heytap.market",
+   "com.heytap.themestore",
+   "com.coloros.compass2"
+  ],
+  "uninstall": [
+   "com.heytap.market",
+   "com.heytap.themestore"
+  ]
+ },
+ "settings": {
+  "global/low_power": "1",
+  "global/transition_animation_scale": "1.0",
+  "global/window_animation_scale": "1.0",
+  "secure/default_input_method": "com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME",
+  "system/peak_refresh_rate": "60.0"
+ },
+ "shell": {
+  "cat /proc/meminfo": "MemTotal:        5770816 kB\nMemFree:         1444908 kB\nMemAvailable:    1993264 kB\n",
+  "cat /proc/uptime": "1036800.12 7000000.00\n",
+  "cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME": "priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=false\napp.olauncher/.MainActivity\n",
+  "cmd role get-role-holders android.app.role.ASSISTANT": "\n",
+  "cmd role get-role-holders android.app.role.BROWSER": "com.android.chrome\n",
+  "cmd role get-role-holders android.app.role.DIALER": "com.google.android.dialer\n",
+  "cmd role get-role-holders android.app.role.HOME": "app.olauncher\n",
+  "cmd role get-role-holders android.app.role.SMS": "com.google.android.apps.messaging\n",
+  "date \"+%Y-%m-%d %H:%M:%S\"": "2026-10-31 20:20:38\n",
+  "date \"+%m-%d %H:%M:%S.000\"": "10-31 20:20:38.000\n",
+  "df -k /data": "Filesystem     1K-blocks     Used Available Use% Mounted on\n/dev/block/sdc51 51488916 22898020 28590896  45% /data\n",
+  "dumpsys battery": "Current Battery Service state:\n  AC powered: false\n  USB powered: true\n  status: 2\n  health: 2\n  level: 8\n  temperature: 295\n",
+  "dumpsys display": "  supportedModes [{id=1, fps=60.0}, {id=2, fps=90.0}, {id=3, fps=45.0}]\n",
+  "getprop": "[ro.product.manufacturer]: [realme]\n[ro.product.model]: [RMX2151]\n[ro.product.device]: [RMX2151L1]\n[ro.build.version.release]: [12]\n[ro.build.version.sdk]: [31]\n[ro.build.version.realmeui]: [V3.0]\n[ro.build.display.id]: [RMX2151_11_F.12]\n[ro.build.version.security_patch]: [2022-11-05]\n[ro.product.cpu.abi]: [arm64-v8a]\n[sys.boot_completed]: [1]\n",
+  "getprop gsm.sim.state": "LOADED,ABSENT\n",
+  "getprop ro.build.display.id": "RMX2151_11_F.12\n",
+  "getprop ro.build.version.realmeui": "V3.0\n",
+  "getprop ro.build.version.release": "12\n",
+  "getprop ro.build.version.sdk": "31\n",
+  "getprop ro.build.version.security_patch": "2022-11-05\n",
+  "getprop ro.product.cpu.abi": "arm64-v8a\n",
+  "getprop ro.product.device": "RMX2151L1\n",
+  "getprop ro.product.manufacturer": "realme\n",
+  "getprop ro.product.model": "RMX2151\n",
+  "getprop sys.boot_completed": "1\n",
+  "pidof com.android.systemui": "2350\n",
+  "ps -A -o NAME": "NAME\nproc0\nproc1\nproc2\nproc3\nproc4\nproc5\nproc6\nproc7\nproc8\nproc9\nproc10\nproc11\nproc12\nproc13\nproc14\nproc15\nproc16\nproc17\nproc18\nproc19\nproc20\nproc21\nproc22\nproc23\nproc24\nproc25\nproc26\nproc27\nproc28\nproc29\nproc30\nproc31\nproc32\nproc33\nproc34\nproc35\nproc36\nproc37\nproc38\nproc39\nproc40\nproc41\nproc42\nproc43\nproc44\nproc45\nproc46\nproc47\nproc48\nproc49\nproc50\nproc51\nproc52\nproc53\nproc54\nproc55\nproc56\nproc57\nproc58\nproc59\nproc60\nproc61\nproc62\nproc63\nproc64\nproc65\nproc66\nproc67\nproc68\nproc69\nproc70\nproc71\nproc72\nproc73\nproc74\nproc75\nproc76\nproc77\nproc78\nproc79\nproc80\nproc81\nproc82\nproc83\nproc84\nproc85\nproc86\nproc87\nproc88\nproc89\nproc90\nproc91\nproc92\nproc93\nproc94\nproc95\nproc96\nproc97\nproc98\nproc99\nproc100\nproc101\nproc102\nproc103\nproc104\nproc105\nproc106\nproc107\nproc108\nproc109\nproc110\nproc111\nproc112\nproc113\nproc114\nproc115\nproc116\nproc117\nproc118\nproc119\nproc120\nproc121\nproc122\nproc123\nproc124\nproc125\nproc126\nproc127\nproc128\nproc129\nproc130\nproc131\nproc132\nproc133\nproc134\nproc135\nproc136\nproc137\nproc138\nproc139\nproc140\nproc141\nproc142\nproc143\nproc144\nproc145\nproc146\nproc147\nproc148\nproc149\nproc150\nproc151\nproc152\nproc153\nproc154\nproc155\nproc156\nproc157\nproc158\nproc159\nproc160\nproc161\nproc162\nproc163\nproc164\nproc165\nproc166\nproc167\nproc168\nproc169\nproc170\nproc171\nproc172\nproc173\nproc174\nproc175\nproc176\nproc177\nproc178\nproc179\nproc180\nproc181\nproc182\nproc183\nproc184\nproc185\nproc186\nproc187\nproc188\nproc189\nproc190\nproc191\nproc192\nproc193\nproc194\nproc195\nproc196\nproc197\nproc198\nproc199\nproc200\nproc201\nproc202\nproc203\nproc204\nproc205\nproc206\nproc207\nproc208\nproc209\nproc210\nproc211\nproc212\nproc213\nproc214\nproc215\nproc216\nproc217\nproc218\nproc219\nproc220\nproc221\nproc222\nproc223\nproc224\nproc225\nproc226\nproc227\nproc228\nproc229\nproc230\nproc231\nproc232\nproc233\nproc234\nproc235\nproc236\nproc237\nproc238\nproc239\nproc240\nproc241\nproc242\nproc243\nproc244\nproc245\nproc246\nproc247\nproc248\nproc249\nproc250\nproc251\nproc252\nproc253\nproc254\nproc255\nproc256\nproc257\nproc258\nproc259\nproc260\nproc261\nproc262\nproc263\nproc264\nproc265\nproc266\nproc267\nproc268\nproc269\nproc270\nproc271\nproc272\nproc273\nproc274\nproc275\nproc276\nproc277\nproc278\nproc279\nproc280\nproc281\nproc282\nproc283\nproc284\nproc285\nproc286\nproc287\nproc288\nproc289\nproc290\nproc291\nproc292\nproc293\nproc294\nproc295\nproc296\nproc297\nproc298\nproc299\nproc300\nproc301\nproc302\nproc303\nproc304\nproc305\nproc306\nproc307\nproc308\nproc309\nproc310\nproc311\nproc312\nproc313\nproc314\nproc315\nproc316\nproc317\nproc318\nproc319\nproc320\nproc321\nproc322\nproc323\nproc324\nproc325\nproc326\nproc327\nproc328\nproc329\nproc330\nproc331\nproc332\nproc333\nproc334\nproc335\nproc336\nproc337\nproc338\nproc339\nproc340\nproc341\nproc342\nproc343\nproc344\nproc345\nproc346\nproc347\nproc348\nproc349\nproc350\nproc351\nproc352\nproc353\nproc354\nproc355\nproc356\nproc357\nproc358\nproc359\nproc360\nproc361\nproc362\nproc363\nproc364\nproc365\nproc366\nproc367\nproc368\nproc369\nproc370\nproc371\nproc372\nproc373\nproc374\nproc375\nproc376\nproc377\nproc378\nproc379\nproc380\nproc381\nproc382\nproc383\nproc384\nproc385\nproc386\nproc387\nproc388\nproc389\nproc390\nproc391\nproc392\nproc393\nproc394\nproc395\nproc396\nproc397\nproc398\nproc399\nproc400\nproc401\nproc402\nproc403\nproc404\nproc405\nproc406\nproc407\nproc408\nproc409\nproc410\nproc411\nproc412\nproc413\nproc414\nproc415\nproc416\nproc417\nproc418\nproc419\nproc420\nproc421\nproc422\nproc423\nproc424\nproc425\nproc426\nproc427\nproc428\nproc429\nproc430\nproc431\nproc432\nproc433\nproc434\nproc435\nproc436\nproc437\nproc438\nproc439\nproc440\nproc441\nproc442\nproc443\nproc444\nproc445\nproc446\nproc447\nproc448\nproc449\nproc450\nproc451\nproc452\nproc453\nproc454\nproc455\nproc456\nproc457\nproc458\nproc459\nproc460\nproc461\nproc462\nproc463\nproc464\nproc465\nproc466\nproc467\nproc468\nproc469\nproc470\nproc471\nproc472\nproc473\nproc474\nproc475\nproc476\nproc477\nproc478\nproc479\nproc480\nproc481\nproc482\nproc483\nproc484\nproc485\nproc486\nproc487\nproc488\nproc489\nproc490\nproc491\nproc492\nproc493\nproc494\nproc495\nproc496\nproc497\nproc498\nproc499\nproc500\nproc501\nproc502\nproc503\nproc504\nproc505\nproc506\nproc507\nproc508\nproc509\nproc510\nproc511\nproc512\nproc513\nproc514\nproc515\nproc516\nproc517\nproc518\nproc519\nproc520\nproc521\nproc522\nproc523\nproc524\nproc525\nproc526\nproc527\nproc528\nproc529\nproc530\nproc531\nproc532\nproc533\nproc534\nproc535\nproc536\nproc537\nproc538\nproc539\nproc540\nproc541\nproc542\nproc543\nproc544\nproc545\nproc546\nproc547\nproc548\nproc549\nproc550\nproc551\nproc552\nproc553\nproc554\nproc555\nproc556\nproc557\nproc558\nproc559\nproc560\nproc561\nproc562\nproc563\nproc564\nproc565\nproc566\nproc567\nproc568\nproc569\nproc570\nproc571\nproc572\nproc573\nproc574\nproc575\nproc576\nproc577\nproc578\nproc579\nproc580\nproc581\nproc582\nproc583\nproc584\nproc585\nproc586\nproc587\nproc588\nproc589\nproc590\nproc591\nproc592\nproc593\nproc594\nproc595\nproc596\nproc597\nproc598\nproc599\nproc600\nproc601\nproc602\nproc603\nproc604\nproc605\nproc606\nproc607\nproc608\nproc609\nproc610\nproc611\nproc612\nproc613\nproc614\nproc615\nproc616\nproc617\nproc618\nproc619\nproc620\nproc621\nproc622\nproc623\nproc624\nproc625\nproc626\nproc627\nproc628\nproc629\nproc630\nproc631\nproc632\nproc633\nproc634\nproc635\nproc636\nproc637\nproc638\nproc639\nproc640\nproc641\nproc642\nproc643\nproc644\nproc645\nproc646\nproc647\nproc648\nproc649\nproc650\nproc651\nproc652\nproc653\nproc654\nproc655\nproc656\nproc657\nproc658\nproc659\nproc660\nproc661\nproc662\nproc663\nproc664\nproc665\nproc666\nproc667\nproc668\nproc669\nproc670\nproc671\nproc672\nproc673\nproc674\nproc675\nproc676\nproc677\nproc678\nproc679\nproc680\nproc681\nproc682\nproc683\nproc684\nproc685\nproc686\nproc687\nproc688\nproc689\nproc690\nproc691\nproc692\nproc693\nproc694\nproc695\nproc696\nproc697\nproc698\nproc699\nproc700\nproc701\nproc702\nproc703\nproc704\nproc705\nproc706\nproc707\nproc708\nproc709\nproc710\nproc711\nproc712\nproc713\nproc714\nproc715\nproc716\nproc717\nproc718\nproc719\nproc720\nproc721\nproc722\nproc723\nproc724\nproc725\nproc726\nproc727\nproc728\nproc729\nproc730\nproc731\nproc732\nproc733\nproc734\nproc735\nproc736\nproc737\nproc738\nproc739\nproc740\nproc741\nproc742\nproc743\nproc744\nproc745\nproc746\nproc747\nproc748\nproc749\nproc750\nproc751\nproc752\nproc753\nproc754\nproc755\nproc756\nproc757\nproc758\nproc759\nproc760\nproc761\nproc762\nproc763\nproc764\nproc765\nproc766\nproc767\nproc768\nproc769\nproc770\nproc771\nproc772\nproc773\nproc774\nproc775\nproc776\nproc777\nproc778\nproc779\nproc780\nproc781\nproc782\nproc783\nproc784\nproc785\nproc786\nproc787\nproc788\nproc789\nproc790\nproc791\nproc792\nproc793\nproc794\nproc795\nproc796\nproc797\nproc798\nproc799\nproc800\nproc801\nproc802\nproc803\nproc804\nproc805\nproc806\nproc807\nproc808\nproc809\nproc810\nproc811\nproc812\nproc813\nproc814\nproc815\nproc816\nproc817\n",
+  "settings list global": "low_power=1\nwindow_animation_scale=1.0\n",
+  "settings list secure": "default_input_method=com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME\n",
+  "settings list system": "peak_refresh_rate=60.0\n"
+ }
+}

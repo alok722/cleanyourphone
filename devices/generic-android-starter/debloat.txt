@@ -1,0 +1,32 @@
+# Any Android phone: Google and partner apps many phones ship with
+# STARTER LIST, UNTESTED. Built from widely documented packages, not from a phone we tested.
+# Run `./cmp discover` instead of applying this directly: it proposes only what is on your phone,
+# and you review it first. Tested it on your phone? Send a PR as devices/<brand>-<model>/.
+#
+# Removing an app you use is harmless (restore brings it back), but read the notes.
+
+# Google extras
+com.google.android.apps.tachyon                # Google Meet / Duo
+com.google.android.videos                      # Google TV / Play Movies
+com.google.android.apps.youtube.music          # YouTube Music
+com.google.android.apps.books                  # Play Books
+com.google.android.apps.magazines              # Google News
+com.google.android.apps.podcasts               # Google Podcasts
+com.google.android.feedback                    # Google Feedback
+com.google.android.printservice.recommendation # Print service recommendations
+com.google.ar.lens                             # Google Lens
+com.google.android.projection.gearhead         # Android Auto; keep if you drive with it
+
+# Test & engineering tools
+com.android.egg                                # Android version easter egg
+com.android.dreams.basic                       # Basic screensaver
+com.android.traceur                            # System tracing
+com.android.bookmarkprovider                   # Partner bookmarks
+com.android.providers.partnerbookmarks         # Partner bookmarks
+
+# Preinstalled partner apps
+com.amazon.appmanager                          # Amazon preinstall stub
+com.netflix.partner.activation                 # Netflix partner activation
+com.facebook.appmanager                        # Facebook preinstall stub
+com.facebook.services                          # Facebook preinstall stub
+com.facebook.system                            # Facebook preinstall stub

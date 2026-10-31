@@ -1,0 +1,8 @@
+{
+ "devices": "List of devices attached\n\n",
+ "shell": {},
+ "packages": {
+  "system": [],
+  "user": []
+ }
+}

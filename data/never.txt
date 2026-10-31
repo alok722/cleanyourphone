@@ -1,0 +1,100 @@
+# Packages cleanyourphone will never disable, uninstall or suspend.
+#
+# tools/safety.py loads this file; `cmp apply` refuses any list that names one of these and CI
+# fails a device list that contains one. There is no override flag. A phone that loses one of these
+# can stop booting, lose calls/SMS/mobile data, or lose the ability to install or restore apps.
+#
+# One entry per line. A trailing * matches every package that starts with the text before it.
+
+# Android core
+android
+com.android.systemui
+com.android.settings
+com.android.shell
+com.android.phone
+com.android.server.telecom
+com.android.permissioncontroller
+com.google.android.permissioncontroller
+com.android.packageinstaller
+com.google.android.packageinstaller
+com.android.extservices
+com.google.android.ext.services
+com.android.ext.services
+android.ext.services
+com.google.android.ext.shared
+com.android.ext.shared
+android.ext.shared
+com.android.modulemetadata
+com.google.android.modulemetadata
+com.google.android.overlay.modules*
+com.android.networkstack*
+com.google.android.networkstack*
+com.android.inputdevices
+com.android.keychain
+com.android.location.fused
+com.android.externalstorage
+com.android.mtp
+com.android.se
+com.android.certinstaller
+com.android.storagemanager
+com.android.documentsui
+com.google.android.documentsui
+com.android.webview
+com.google.android.webview
+com.android.wifi.resources*
+com.google.android.connectivity.resources
+com.google.android.captiveportallogin
+com.android.vpndialogs
+com.android.localtransport
+com.android.backupconfirm
+com.android.sharedstoragebackup
+
+# Content providers (calendar, contacts, user dictionary and blocked numbers are left to the lists)
+com.android.providers.settings
+com.android.providers.telephony
+com.android.providers.media
+com.google.android.providers.media.module
+com.android.providers.media.module
+com.android.providers.downloads
+com.android.providers.downloads.ui
+
+# Telephony, SMS/MMS transport, carrier and VoLTE (losing these can mean no calls or data)
+com.android.mms.service
+com.android.carrierconfig*
+com.android.carrierdefaultapp
+com.android.stk
+com.android.simappdialog
+com.android.ims*
+com.google.android.ims
+com.mediatek.ims
+com.mediatek.telephony
+com.android.cellbroadcastreceiver*
+com.google.android.cellbroadcast*
+com.qualcomm.qti.ims
+org.codeaurora.ims
+com.sec.imsservice
+com.sec.ims
+com.samsung.android.ims*
+com.shannon.imsservice
+
+# Google Play (app updates, sign-in, push notifications)
+com.android.vending
+com.google.android.gms
+com.google.android.gsf
+
+# OEM system cores that skins treat as load-bearing
+com.oplus.athena
+com.oplus.battery
+com.oplus.exsystemservice
+com.oplus.appplatform
+com.oplus.securitypermission
+com.coloros.phonemanager
+com.miui.securitycenter
+com.miui.securitycore
+com.miui.system
+com.xiaomi.misettings
+com.samsung.android.knox*
+com.sec.android.app.launcher
+com.samsung.android.providers.context
+com.vivo.permissionmanager
+com.motorola.motosignature.app

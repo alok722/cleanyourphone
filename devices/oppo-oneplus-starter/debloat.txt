@@ -1,0 +1,27 @@
+# OPPO (ColorOS 11-14) and OnePlus (OxygenOS 12-14, ColorOS-based)
+# realme phones: start from devices/realme-7-rmx2151/, which is tested and shares most packages.
+# STARTER LIST, UNTESTED. Built from widely documented packages, not from a phone we tested.
+# Run `./cmp discover` instead of applying this directly: it proposes only what is on your phone,
+# and you review it first. Tested it on your phone? Send a PR as devices/<brand>-<model>/.
+#
+
+# Ads & tracking
+com.glance.internet                            # Glance lock-screen ads
+com.heytap.pictorial                           # Lock Screen Magazine
+com.heytap.mcs                                 # HeyTap push messages (promotional notifications)
+com.oplus.statistics.rom                       # ROM usage statistics
+com.facebook.appmanager                        # Facebook preinstall stub
+com.facebook.services                          # Facebook preinstall stub
+com.facebook.system                            # Facebook preinstall stub
+
+# OPPO duplicate apps
+com.heytap.browser                             # OPPO/HeyTap Browser (ads); Chrome stays
+com.heytap.music                               # Music
+com.heytap.market                              # App Market; may need suspend (protected on ColorOS)
+com.heytap.cloud                               # HeyTap Cloud
+com.oppoex.afterservice                        # Service center
+
+# OPPO extras
+com.oplus.games                                # Game Space
+com.coloros.weather2                           # Weather
+com.coloros.compass2                           # Compass

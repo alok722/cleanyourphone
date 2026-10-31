@@ -1,0 +1,88 @@
+# realme 7 (RMX2151), Android 12, realme UI 3.0, build RMX2151_11_F.12, security patch 2022-11-05
+# Tested by @alok722 on 30 Oct 2026: phone used daily afterwards, calls, SMS, VoLTE (Jio/Airtel), camera,
+# Play Store, WhatsApp, banking apps all fine. About 60% more free RAM afterwards.
+#
+# Apply:  ./cmp apply devices/realme-7-rmx2151/debloat.txt
+# Undo:   ./cmp restore
+# Comment out any line you want to keep.
+#
+# ColorOS quirks on this build:
+# - com.heytap.market and com.heytap.themestore refuse disable-user and uninstall; cmp falls back to suspend.
+# - Suspending Theme Store breaks the "Recent" tab in Settings > Wallpapers and theme changes.
+# - `settings put` is refused unless Developer options > "Disable permission monitoring" is on (it resets
+#   at reboot); cmp tune falls back to tapping through Settings.
+
+# Ads & tracking
+com.glance.internet                            # Glance lock-screen ads
+com.heytap.pictorial                           # Lock Screen Magazine
+com.facebook.appmanager
+com.facebook.services
+com.facebook.system
+com.amazon.appmanager
+com.heytap.mcs                                 # HeyTap push messages (promotional notifications)
+com.oplus.statistics.rom                       # ROM usage statistics
+com.oplus.crashbox
+com.oplus.logkit
+com.oplus.postmanservice
+com.finshell.fin                               # Finshell loans app
+com.oplus.pay                                  # realme Pay SDK
+com.redteamobile.roaming                       # Redtea international roaming data offers
+com.ses.entitlement.o2                         # O2 (UK carrier) entitlement, useless elsewhere
+
+# realme duplicate apps
+com.heytap.browser                             # realme Browser (ads); Chrome stays
+com.heytap.music
+com.coloros.video                              # realme Video; videos open in another player
+com.heytap.market                              # App Market, labelled "APP Picks"; ColorOS blocks disable and uninstall, so it ends up suspended
+com.heytap.market.overlay
+com.heytap.cloud                               # HeyTap Cloud backup
+com.coloros.karaoke
+com.coloros.childrenspace
+com.coloros.healthcheck                        # Phone Diagnostics
+com.oppoex.afterservice                        # Service Center
+com.oppo.operationManual
+
+# Test & engineering tools
+com.debug.loggerui
+com.mediatek.engineermode                      # MediaTek engineer mode
+com.mediatek.lbs.em2.ui
+com.mediatek.mdmlsample
+com.oplus.bttestmode
+com.oplus.engineermodeforflipkart              # Flipkart-variant engineer mode
+com.android.traceur
+com.android.egg
+com.android.dreams.basic
+com.android.bookmarkprovider
+com.android.providers.partnerbookmarks
+com.android.email.partnerprovider
+
+# realme extras
+com.oplus.games                                # Game Space
+com.coloros.weather2
+com.coloros.weather.service                    # removes weather from the clock widget too
+com.coloros.compass2
+com.coloros.smartsidebar
+com.coloros.floatassistant
+com.coloros.oshare                             # Share (realme-to-realme); Quick Share/Nearby stays
+com.oplus.synergy                              # PC Connect
+com.oplus.cast                                 # Screencast
+com.realme.movieshot
+com.realme.wellbeing
+
+# Google extras (Lens, AR, Android Auto, Feedback, Google Pay, Assistant)
+com.google.ar.lens                             # Google Lens
+com.google.ar.core                             # ARCore; Maps Live View stops working
+com.google.android.projection.gearhead         # Android Auto
+com.google.android.feedback
+com.google.android.gms.location.history
+com.google.android.printservice.recommendation
+com.google.android.apps.restore
+com.google.android.apps.nbu.paisa.user         # Google Pay (UPI); keep if you pay with it
+com.google.android.apps.googleassistant        # Assistant shortcut
+com.android.hotwordenrollment.okgoogle         # "OK Google" voice training
+
+# Assistant (lives inside the Google app)
+com.google.android.googlequicksearchbox        # Google app: removes Assistant, Discover and the search widget; Chrome still searches
+
+# Theme Store (needs suspend on this build, see the quirks above)
+com.heytap.themestore                          # Theme Store; wallpapers and themes can no longer be changed

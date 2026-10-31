@@ -1,0 +1,21 @@
+# vivo / iQOO, Funtouch OS 11-14 and OriginOS
+# STARTER LIST, UNTESTED. Built from widely documented packages, not from a phone we tested.
+# Run `./cmp discover` instead of applying this directly: it proposes only what is on your phone,
+# and you review it first. Tested it on your phone? Send a PR as devices/<brand>-<model>/.
+#
+# Not listed on purpose: i Manager (com.iqoo.secure) and vivo's permission manager; they are load-bearing.
+
+# Ads & tracking
+com.glance.internet                            # Glance lock-screen ads
+com.facebook.appmanager                        # Facebook preinstall stub
+com.facebook.services                          # Facebook preinstall stub
+com.facebook.system                            # Facebook preinstall stub
+
+# vivo duplicate apps
+com.vivo.browser                               # vivo Browser (ads); Chrome stays
+com.bbk.appstore                               # V-Appstore (ads); Play Store stays
+com.vivo.website                               # vivo.com shortcut
+
+# vivo extras
+com.vivo.assistant                             # Jovi smart scene
+com.vivo.easyshare                             # EasyShare

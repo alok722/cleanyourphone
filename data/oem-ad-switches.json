@@ -1,0 +1,36 @@
+{
+  "any": [
+    "Settings > Google > Ads > Delete advertising ID (stops apps profiling you across apps)",
+    "Play Store > profile picture > Settings > Network preferences > Auto-update apps: Over Wi-Fi only"
+  ],
+  "realme UI": [
+    "Lock screen > Glance / Lock screen magazine: off (if still installed)",
+    "Settings > Additional settings > Privacy > Get recommendations / Personalised recommendations: off",
+    "App Market (if still installed) > Settings > Push notifications and recommendations: off",
+    "Phone Manager / Security > Settings > Get recommendations: off"
+  ],
+  "ColorOS": [
+    "Lock screen > Glance / Lock screen magazine: off",
+    "Settings > Additional settings > Privacy > Get recommendations: off",
+    "App Market > Settings > Push notifications and recommendations: off"
+  ],
+  "MIUI": [
+    "Settings > Passwords & security > Authorization & revocation > msa: revoke",
+    "Settings > Passwords & security > Privacy > Ad services > Personalized ad recommendations: off",
+    "Security, Cleaner, File Manager, Music, Themes and Downloads apps > Settings > Receive recommendations: off",
+    "Settings > Additional settings > Privacy > User Experience Program: off"
+  ],
+  "HyperOS": [
+    "Settings > Passwords & security > Authorization & revocation > msa: revoke",
+    "Settings > Privacy protection > Ads > Personalized ad recommendations: off"
+  ],
+  "One UI": [
+    "Settings > Security and privacy > More privacy settings > Customization Service: off",
+    "Settings > Privacy > Send diagnostic data: off",
+    "Samsung Galaxy Store > Menu > Settings > Marketing notifications: off"
+  ],
+  "Funtouch/OriginOS": [
+    "Settings > Security & privacy > Privacy > Personalized ads / recommendations: off",
+    "V-Appstore > Settings > Push notifications: off"
+  ]
+}

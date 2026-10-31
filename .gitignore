@@ -1,0 +1,15 @@
+# Personal working files from the first realme 7 session (not part of the repo)
+/debloat/
+/wallpapers/
+/PLAN.md
+
+# Outputs written by cmp
+/shots/
+/reports/
+*.local.*
+
+__pycache__/
+*.pyc
+.DS_Store
+.venv/
+my-list*.txt

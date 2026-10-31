@@ -1,0 +1,8 @@
+{
+ "devices": "List of devices attached\nFAKESERIAL0RMX21       unauthorized usb:1048576X transport_id:2\n\n",
+ "shell": {},
+ "packages": {
+  "system": [],
+  "user": []
+ }
+}

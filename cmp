@@ -1,0 +1,4 @@
+#!/bin/sh
+# cleanyourphone entry point for macOS and Linux: ./cmp <step>
+cd "$(dirname "$0")" || exit 2
+exec python3 -I tools/cmp.py "$@"

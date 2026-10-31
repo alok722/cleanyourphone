@@ -1,0 +1,37 @@
+# Samsung Galaxy, One UI 2-6
+# STARTER LIST, UNTESTED. Built from widely documented packages, not from a phone we tested.
+# Run `./cmp discover` instead of applying this directly: it proposes only what is on your phone,
+# and you review it first. Tested it on your phone? Send a PR as devices/<brand>-<model>/.
+#
+# Not listed on purpose: Game Optimizing Service (com.samsung.android.game.gos), Samsung account and
+# Knox packages, Quick Share. They are load-bearing or contested; leave them unless you know why.
+
+# Ads & tracking
+com.samsung.android.rubin.app                  # Customization Service (ad/usage profiling)
+com.samsung.android.dqagent                    # Device quality agent (diagnostics upload)
+com.sec.android.diagmonagent                   # Diagnostic monitoring agent
+com.samsung.android.app.spage                  # Samsung Free / Bixby Home feed
+com.facebook.appmanager                        # Facebook preinstall stub
+com.facebook.services                          # Facebook preinstall stub
+com.facebook.system                            # Facebook preinstall stub
+
+# Samsung duplicate apps
+com.sec.android.app.sbrowser                   # Samsung Internet; Chrome stays
+com.samsung.android.app.tips                   # Tips
+com.samsung.android.voc                        # Samsung Members
+com.samsung.sree                               # Global Goals (ads for charities)
+
+# Samsung extras
+com.samsung.android.bixby.agent                # Bixby Voice
+com.samsung.android.bixby.wakeup               # Bixby wake-up
+com.samsung.android.visionintelligence         # Bixby Vision
+com.samsung.android.game.gamehome              # Game Launcher
+com.samsung.android.arzone                     # AR Zone
+com.samsung.android.aremoji                    # AR Emoji
+com.samsung.android.stickercenter              # Sticker center
+com.samsung.android.kidsinstaller              # Kids mode installer
+
+# Preinstalled partner apps
+com.microsoft.skydrive                         # OneDrive
+com.linkedin.android                           # LinkedIn (preinstalled copy)
+com.netflix.partner.activation                 # Netflix partner activation

@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Tests and lists (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Unit tests (fake adb, no phone needed)
+        run: python -W error::ResourceWarning -m unittest discover -s tests -v
+      - name: Every device list is clean
+        shell: bash
+        run: python -I tools/cmp.py lint devices/*/debloat.txt
+      - name: Launchers start
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then pwsh -File ./cmp.ps1 --version; else ./cmp --version; fi
