@@ -20,8 +20,6 @@
   <img src="docs/media/demo.svg" width="860" alt="Terminal replay: ./cmp go asks which bloat groups to remove, removes them in batches with a health check after each, tunes speed, restarts the phone and checks it, then prints DONE: about 60% more free RAM, 20% fewer apps, 2x faster animations, and the one-line undo.">
 </p>
 
-> 🚧 Work in progress, not public yet.
-
 Inspired by [cleanyourtv](https://github.com/Gathin23/cleanyourtv) by [@gathint](https://x.com/gathint), which does the
 same for Android TVs.
 
