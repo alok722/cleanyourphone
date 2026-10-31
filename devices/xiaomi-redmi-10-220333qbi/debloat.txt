@@ -1,0 +1,49 @@
+# Xiaomi Redmi 10 (220333QBI, "fog", India), Android 13, MIUI 14.0.7 (V14.0.7.0.TGEINXM), security patch 2024-09-01
+# Tested by @alok722 on 31 Oct 2026 with `cmp go`: all five groups below disabled in five checked batches,
+# home screen, keyboard, phone, messages and Play Store fine afterwards.
+#
+# Apply:  ./cmp go   (or ./cmp apply devices/xiaomi-redmi-10-220333qbi/debloat.txt)
+# Undo:   ./cmp restore
+# Comment out any line you want to keep.
+#
+# MIUI quirks on this build:
+# - After a restart MIUI can take minutes to reappear over USB; cmp waits up to 7 minutes and resumes with `./cmp go`.
+# - `settings put` (animations, refresh rate, Private DNS) is refused over adb unless Developer options >
+#   "USB debugging (Security settings)" is on, which MIUI only allows with a SIM and a Mi account. Without it,
+#   set those by hand; cmp lists them as notes in DONE.
+# - MIUI blocks uninstalling its own apps (Weather: Failure [-1000]); cmp disables those instead.
+
+# Test & engineering tools
+com.android.bookmarkprovider                   # Partner bookmarks
+com.android.dreams.basic                       # Basic screensaver
+com.android.egg                                # Android version easter egg
+com.android.providers.partnerbookmarks         # Partner bookmarks
+com.android.traceur                            # System tracing
+
+# Google extras (Lens, AR, Android Auto, Feedback, Google Pay, Assistant)
+com.android.hotwordenrollment.okgoogle         # "OK Google" voice training
+com.google.android.apps.googleassistant        # Assistant shortcut
+com.google.android.apps.nbu.paisa.user         # Google Pay (UPI); keep if you pay with it
+com.google.android.apps.restore                # Setup restore helper
+com.google.android.feedback                    # Google Feedback
+com.google.android.gms.location.history        # Location history stub
+com.google.android.printservice.recommendation # Print service recommendations
+com.google.android.projection.gearhead         # Android Auto; keep if you drive with it
+
+# Ads & tracking
+com.facebook.appmanager                        # Facebook preinstall stub
+com.facebook.services                          # Facebook preinstall stub
+com.facebook.system                            # Facebook preinstall stub
+com.miui.analytics                             # MIUI analytics
+com.miui.bugreport                             # Bug report uploader
+com.miui.miservice                             # Services & feedback
+com.miui.msa.global                            # MSA, the system ad service behind in-app MIUI ads
+com.miui.yellowpage                            # Yellow pages / caller business info
+
+# Assistant (lives inside the Google app)
+com.google.android.googlequicksearchbox        # Google app: removes Assistant, Discover and the search widget; Chrome still searches
+
+# Xiaomi duplicate apps
+com.miui.player                                # Mi Music
+com.xiaomi.glgm                                # Games
+com.xiaomi.mipicks                             # GetApps store (ads); Play Store stays

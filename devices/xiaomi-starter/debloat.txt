@@ -1,4 +1,5 @@
 # Xiaomi / Redmi / POCO, MIUI 12-14 and HyperOS (global and India ROMs)
+# Tested on a Redmi 10 (MIUI 14): see devices/xiaomi-redmi-10-220333qbi/, which also lists the MIUI quirks.
 # STARTER LIST, UNTESTED. Built from widely documented packages, not from a phone we tested.
 # Run `./cmp discover` instead of applying this directly: it proposes only what is on your phone,
 # and you review it first. Tested it on your phone? Send a PR as devices/<brand>-<model>/.

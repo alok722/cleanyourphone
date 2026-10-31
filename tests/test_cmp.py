@@ -268,8 +268,9 @@ class TestKnowledgeBase(unittest.TestCase):
         self.assertEqual(known["com.glance.internet"]["group"], "Ads & tracking")
         self.assertEqual(known["com.glance.internet"]["status"], "tested", "tested list wins over starters")
         self.assertEqual(known["com.heytap.themestore"]["group"], "Theme Store (needs suspend on this build, see the quirks above)")
-        self.assertEqual(known["com.miui.msa.global"]["status"], "starter")
+        self.assertEqual(known["com.miui.msa.global"]["status"], "tested", "the Redmi 10 list confirms it")
         self.assertIn("ad service", known["com.miui.msa.global"]["note"])
+        self.assertEqual(known["com.samsung.android.rubin.app"]["status"], "starter")
 
     def test_matching_device_by_model(self):
         self.assertEqual(kb.matching_device("RMX2151")[0], "realme-7-rmx2151")

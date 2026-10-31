@@ -1,0 +1,8 @@
+{
+  "phone": "Xiaomi Redmi 10 (220333QBI)",
+  "brand": "Xiaomi",
+  "os": "Android 13, MIUI 14",
+  "status": "tested",
+  "models": ["220333QBI"],
+  "notes": "MIUI analytics and MSA ads, Facebook stubs, GetApps, Mi Music, Games, test tools, Google Lens/Pay/Assistant; MIUI refuses settings changes over adb without a SIM and Mi account"
+}
