@@ -60,7 +60,7 @@ class FakePhoneTest(unittest.TestCase):
 
     def footer(self, output):
         return {line.split(": ", 1)[0]: line.split(": ", 1)[1]
-                for line in output.splitlines() if line.split(":", 1)[0] in ("RESULT", "SUMMARY", "NEXT", "ASK_USER")}
+                for line in output.splitlines() if line.split(":", 1)[0] in ("RESULT", "SUMMARY", "NEXT", "ASK_USER", "ASK_JSON")}
 
     def adb_calls(self):
         with open(self.env["CYP_FAKE_LOG"], encoding="utf-8") as f:
@@ -381,8 +381,11 @@ class TestGo(FakePhoneTest):
         code, out = self.run_cmp("go", "--out", out_path)
         f = self.footer(out)
         self.assertEqual(code, 0, out)
-        self.assertIn("Which group numbers do you want to KEEP?", f["ASK_USER"])
-        self.assertIn("go --yes --keep", f["NEXT"])
+        questions = json.loads(f["ASK_JSON"])
+        self.assertTrue(all(2 <= len(q["options"]) <= 4 and len(q["header"]) <= 12 for q in questions))
+        self.assertEqual(questions[-1]["flag"], "--adblock")
+        self.assertIn("--remove", {q["flag"] for q in questions})
+        self.assertIn("ASK_JSON", f["ASK_USER"])
         self.assertEqual([e for e in journal.Journal(cmp.Phone(SERIAL).id).entries()], [])
         self.assertTrue(journal.backups(cmp.Phone(SERIAL).id))
 
@@ -439,8 +442,10 @@ class TestRarelyUsed(FakePhoneTest):
         self.assertIn("b. com.example.rarelyused  (91 days)", out)
         self.assertNotIn("com.whatsapp  (", out, "used today")
         self.assertNotIn("app.olauncher  (", out, "current home screen is protected")
-        self.assertIn("UNINSTALL", f["ASK_USER"])
-        self.assertIn("--uninstall", f["NEXT"])
+        questions = json.loads(f["ASK_JSON"])
+        apps = [o for q in questions if q["flag"] == "--uninstall" for o in q["options"]]
+        self.assertEqual([o["value"] for o in apps], ["a", "b"])
+        self.assertIn("91 days unused", apps[1]["description"])
 
     def test_go_uninstalls_picked_restricts_the_rest_and_restore_undoes_both(self):
         out_path = os.path.join(self.tmp.name, "go.txt")
@@ -572,6 +577,55 @@ class TestJournalEdgeCases(unittest.TestCase):
             self.assertEqual(kb.parse_list(f.name), [("b.two", "Ads", "")])
         finally:
             os.unlink(f.name)
+
+
+class TestCheckboxQuestions(FakePhoneTest):
+    def test_split_even_never_leaves_a_lonely_option(self):
+        self.assertEqual([len(p) for p in cmp.split_even(list(range(5)))], [3, 2])
+        self.assertEqual([len(p) for p in cmp.split_even(list(range(20)))], [4, 4, 4, 4, 4])
+        self.assertEqual([len(p) for p in cmp.split_even(list(range(9)))], [3, 3, 3])
+        for n in range(2, 40):
+            self.assertTrue(all(2 <= len(p) <= 4 for p in cmp.split_even(list(range(n)))), n)
+
+    def test_single_item_becomes_a_remove_or_keep_choice(self):
+        [q] = cmp.checkbox_questions("Remove?", "Apps", "--uninstall", [("a", "Spotify", "x")], "")
+        self.assertFalse(q["multi_select"])
+        self.assertEqual([o["value"] for o in q["options"]], ["a", ""])
+
+    def test_ticked_groups_are_removed_unticked_kept(self):
+        out_path = os.path.join(self.tmp.name, "go.txt")
+        code, out = self.run_cmp("go", "--out", out_path)
+        questions = json.loads(self.footer(out)["ASK_JSON"])
+        groups = cmp.numbered_groups(out_path)
+        weather_group = str(next(i for i, (g, p) in enumerate(groups, 1) if "com.coloros.weather2" in p))
+        others = [o["value"] for q in questions if q["flag"] == "--remove" for o in q["options"]
+                  if o["value"] != weather_group]
+        cwd = os.getcwd()
+        os.chdir(self.tmp.name)
+        try:
+            code, out = self.run_cmp("go", "--yes", "--remove", " ".join(others), "--adblock", "yes",
+                                     "--out", out_path)
+        finally:
+            os.chdir(cwd)
+        self.assertEqual(code, 0, out)
+        with open(self.env["CYP_FAKE_STATE"], encoding="utf-8") as f:
+            state = json.load(f)
+        gone = set(state["disabled"]) | set(state["uninstalled"]) | set(state["suspended"])
+        self.assertIn("com.heytap.browser", gone)
+        self.assertNotIn("com.coloros.weather2", gone)
+        self.assertEqual(state["settings"].get("global/private_dns_mode"), "hostname")
+
+    def test_bad_remove_token_changes_nothing(self):
+        out_path = os.path.join(self.tmp.name, "go.txt")
+        self.run_cmp("go", "--out", out_path)
+        cwd = os.getcwd()
+        os.chdir(self.tmp.name)
+        try:
+            code, out = self.run_cmp("go", "--yes", "--remove", "99", "--out", out_path)
+        finally:
+            os.chdir(cwd)
+        self.assertEqual(code, 2)
+        self.assertIn("--remove 99", self.footer(out)["SUMMARY"])
 
 
 class TestApprox(unittest.TestCase):

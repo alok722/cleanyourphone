@@ -30,14 +30,14 @@ protected in code ([`data/never.txt`](data/never.txt)), whatever a list or an as
    the phone unlocked while it runs. Connect it to your computer with a USB data cable.
 2. **On your computer:** clone this repo, open the folder in a coding assistant (Claude Code, Gemini CLI,
    Codex: free tiers are fine) and paste the contents of [`PROMPT.md`](PROMPT.md).
-3. Tap **Allow** on the phone, answer **one** question (which app groups to keep), and wait about 5 minutes.
+3. Tap **Allow** on the phone, tick what to remove in the assistant's question box, and wait about 5 minutes.
 
 Without an assistant it's the same two commands:
 
 ```bash
 git clone https://github.com/alok722/cleanyourphone && cd cleanyourphone
 ./cmp go                         # read-only: checks, backup, measures, lists the bloat in numbered groups
-./cmp go --yes --keep "2 5"      # removes the rest in checked batches, speeds up, reboots, reports
+./cmp go --yes --remove "1 3" --uninstall "a"   # removes what you picked in checked batches, speeds up, reboots, reports
 ./cmp restore                    # undo everything, any time
 ```
 

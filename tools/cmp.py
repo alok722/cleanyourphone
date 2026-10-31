@@ -55,6 +55,7 @@ class Footer:
         self.summary = ""
         self.next = None
         self.ask = None
+        self.questions = None  # structured form of ask, for an assistant's own question box
 
     def warn(self, msg):
         print("WARN: " + msg)
@@ -73,6 +74,8 @@ class Footer:
             print("NEXT: " + self.next)
         if self.ask:
             print("ASK_USER: " + self.ask)
+        if self.questions:
+            print("ASK_JSON: " + json.dumps(self.questions, ensure_ascii=False))
         return 2 if self.result == "stop" else 0
 
 
@@ -829,6 +832,63 @@ def numbered_groups(path):
     return groups
 
 
+def split_even(items, size=4):
+    """Split into parts of at most `size`, as even as possible (5 -> 3+2), so no part has a single option."""
+    if len(items) <= size:
+        return [items]
+    parts = -(-len(items) // size)
+    base, extra = divmod(len(items), parts)
+    out, i = [], 0
+    for p in range(parts):
+        n = base + (1 if p < extra else 0)
+        out.append(items[i:i + n])
+        i += n
+    return out
+
+
+def checkbox_questions(title, header, flag, items, note):
+    """Questions for an assistant's question box (2-4 options each). items: [(value, label, description)]."""
+    if len(items) == 1:
+        value, lab, desc = items[0]
+        return [{"id": flag.strip("-"), "header": header, "flag": flag, "multi_select": False,
+                 "question": "%s %s" % (title, note),
+                 "options": [{"value": value, "label": "Remove " + lab, "description": desc},
+                             {"value": "", "label": "Keep it", "description": "Leave it as it is"}]}]
+    chunks = split_even(items)
+    questions = []
+    for n, chunk in enumerate(chunks, 1):
+        part = " (part %d of %d)" % (n, len(chunks)) if len(chunks) > 1 else ""
+        questions.append({"id": "%s_%d" % (flag.strip("-"), n), "flag": flag, "multi_select": True,
+                          "header": ("%s %d/%d" % (header, n, len(chunks)) if len(chunks) > 1 else header)[:12],
+                          "question": "%s%s %s" % (title, part, note),
+                          "options": [{"value": v, "label": lab, "description": d} for v, lab, d in chunk]})
+    return questions
+
+
+def go_questions(groups, rare, days):
+    questions = []
+    if groups:
+        questions += checkbox_questions(
+            "Which preinstalled bloat groups should I remove?", "Bloat", "--remove",
+            [(str(i), "%s (%d)" % (re.sub(r"\s*\(.*?\)", "", g).strip()[:40] or g[:40], len(p)),
+              "%s: %s" % (g, ", ".join(p[:3]) + (", ..." if len(p) > 3 else "")))
+             for i, (g, p) in enumerate(groups, 1)],
+            "Tick the ones to remove; unticked groups are kept. Everything can be restored later.")
+    if rare:
+        questions += checkbox_questions(
+            "Which of these apps (not opened in %d+ days) should I uninstall?" % days, "Apps", "--uninstall",
+            [(l, label(pkg), "%s · %s" % ("never opened" if never else "%d days unused" % d, pkg))
+             for l, (pkg, d, never) in zip(LETTERS, rare)],
+            "Tick the ones to uninstall; the rest stay but are blocked from running in the background.")
+    questions.append({"id": "adblock", "header": "Ad blocking", "flag": "--adblock", "multi_select": False,
+                      "question": "Also block ads system-wide with AdGuard DNS?",
+                      "options": [{"value": "yes", "label": "Block ads",
+                                   "description": "Free AdGuard DNS: blocks ads in apps and browsers, not YouTube "
+                                                  "ads. AdGuard sees which sites the phone looks up."},
+                                  {"value": "", "label": "No thanks", "description": "Leave DNS as it is"}]})
+    return questions
+
+
 def keep_choices(path, keep):
     """Comment out the groups (by number) and packages the person keeps.
 
@@ -902,23 +962,15 @@ def cmd_go(args, footer):
             for letter, (pkg, days, never) in zip(LETTERS, rare):
                 print("  %s. %s  (%s)" % (letter, pkg, "never opened" if never else "%d days" % days))
         total = sum(len(p) for _, p in groups)
-        parts = []
-        if groups:
-            parts.append("I found %d preinstalled apps you probably don't need, in %d groups: %s. Which group numbers "
-                         "do you want to KEEP? (numbers like '2 5', or 'none' to remove them all)" % (
-                             total, len(groups), "; ".join("%d. %s (%d)" % (i, g, len(p))
-                                                           for i, (g, p) in enumerate(groups, 1))))
-        if rare:
-            parts.append(("These apps you installed haven't been opened in %d+ days: " % args.days) + "%s. Which letters should I "
-                         "UNINSTALL? (letters like 'a c', or 'none'; the ones you keep get blocked from running in "
-                         "the background)" % "; ".join("%s. %s" % (l, label(pkg)) for l, (pkg, _, _) in zip(LETTERS, rare)))
-        parts.append("Everything can be undone with one command. Optional: say 'adblock' to also block ads "
-                     "system-wide with AdGuard DNS (not YouTube ads; AdGuard sees which sites the phone looks up).")
         footer.summary = "%d bloat app(s) in %d group(s), %d rarely used app(s); nothing changed yet" % (
             total, len(groups), len(rare))
-        footer.next = (CMD + " go --yes --keep <numbers or none> --uninstall <letters or none>"
-                       "   (add --adblock only if they asked for it)")
-        footer.ask = screen_ask(phone, " ".join(parts))
+        footer.questions = go_questions(groups, rare, args.days)
+        footer.next = (CMD + " go --yes   then, for each ASK_JSON question, its flag followed by the values of the "
+                       "ticked options in quotes, e.g. --remove \"1 3\" --uninstall \"a c\" --adblock \"yes\"; "
+                       "leave a flag out when nothing was ticked")
+        footer.ask = screen_ask(phone, "Please answer the questions in ASK_JSON (%d of them): tick what to remove or "
+                                "uninstall; anything unticked is kept. Everything can be restored with one command."
+                                % len(footer.questions))
         return
 
     phone = pick_phone(footer)
@@ -929,6 +981,15 @@ def cmd_go(args, footer):
         return
     notes = []
     removed = 0
+    if os.path.exists(args.out) and args.remove is not None:
+        groups = numbered_groups(args.out)
+        tokens = [t for t in re.split(r"[\s,]+", args.remove.strip()) if t and t.lower() != "none"]
+        bad = [t for t in tokens if not (t.isdigit() and 1 <= int(t) <= len(groups))]
+        if bad:
+            footer.stop("didn't understand --remove %s (use group numbers from the questions); nothing was changed"
+                        % " ".join(bad), CMD + " go")
+            return
+        args.keep = " ".join(str(i) for i in range(1, len(groups) + 1) if str(i) not in tokens) or "none"
     if os.path.exists(args.out):
         todo, kept, unknown = keep_choices(args.out, args.keep)
         if unknown:
@@ -983,7 +1044,7 @@ def cmd_go(args, footer):
             notes.append("couldn't change %s (%s)" % (what, tune.MANUAL[what]))
     print("  app caches cleared: about %d MB freed" % tune.trim_caches(phone))
 
-    if args.adblock:
+    if args.adblock and args.adblock.lower() not in ("no", "none", ""):
         print("\n== Ad blocking")
         host = tune.PROVIDERS["adguard"][0]
         r1 = actions.set_setting(phone, "global", "private_dns_specifier", host, log)
@@ -1050,9 +1111,10 @@ def main(argv=None):
     sub = parser.add_subparsers(dest="step", required=True)
     p = sub.add_parser("go", help="the whole job in two calls: read-only first (one question), then --yes")
     p.add_argument("--yes", action="store_true", help="apply: remove, tune, reboot-check, measure, report")
-    p.add_argument("--keep", default="none", help="group numbers and/or package names to keep, e.g. '2 5'")
+    p.add_argument("--remove", help="group numbers to remove, e.g. '1 3' (the rest are kept)")
+    p.add_argument("--keep", default="none", help="or: group numbers and/or package names to keep, e.g. '2 5'")
     p.add_argument("--uninstall", default="none", help="letters of rarely used apps to uninstall, e.g. 'a c'")
-    p.add_argument("--adblock", action="store_true", help="also block ads system-wide with AdGuard DNS")
+    p.add_argument("--adblock", nargs="?", const="yes", default="", help="'yes' to also block ads with AdGuard DNS")
     p.add_argument("--days", type=int, default=30, help="an app unopened this many days counts as rarely used")
     p.add_argument("--out", default="my-list.local.txt", help=argparse.SUPPRESS)
     sub.add_parser("doctor", help="check Python, adb and the phone connection")
