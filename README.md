@@ -1,7 +1,24 @@
-# cleanyourphone
+<p align="center">
+  <img src="docs/media/hero.svg" width="860" alt="cleanyourphone: make an old Android phone fast again. About 60% more free RAM, 20% fewer apps, 2x faster animations. No root, one prompt, every step reversible.">
+</p>
 
-**Make an old Android phone fast again: remove the bloat, block the ads, measure the difference.
-No root, every step reversible.**
+<p align="center">
+  <a href="https://github.com/alok722/cleanyourphone/actions/workflows/ci.yml"><img src="https://github.com/alok722/cleanyourphone/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <img src="https://img.shields.io/badge/root-not%20needed-2ea043?labelColor=15181e" alt="No root needed">
+  <img src="https://img.shields.io/badge/restore-one%20command-2ea043?labelColor=15181e" alt="Restore with one command">
+  <img src="https://img.shields.io/badge/Android-7%2B-3ddc84?labelColor=15181e&logo=android&logoColor=white" alt="Android 7+">
+  <img src="https://img.shields.io/badge/macOS%20%C2%B7%20Linux%20%C2%B7%20Windows-supported-79c0ff?labelColor=15181e" alt="macOS, Linux and Windows">
+  <img src="https://img.shields.io/badge/license-MIT-8b949e?labelColor=15181e" alt="MIT license">
+</p>
+
+<p align="center">
+  <b>Paste one prompt into Claude Code, Codex or Gemini CLI. Tick what to remove. Done in about 5 minutes.</b><br>
+  <a href="#quick-start">Quick start</a> · <a href="#how-it-works">How it works</a> · <a href="#tested-phones">Tested phones</a> · <a href="PROMPT.md">The prompt</a>
+</p>
+
+<p align="center">
+  <img src="docs/media/demo.svg" width="860" alt="Terminal replay: ./cmp go asks which bloat groups to remove, removes them in batches with a health check after each, tunes speed, restarts the phone and checks it, then prints DONE: about 60% more free RAM, 20% fewer apps, 2x faster animations, and the one-line undo.">
+</p>
 
 > 🚧 Work in progress, not public yet.
 

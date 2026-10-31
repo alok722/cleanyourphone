@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="300" viewBox="0 0 940 300" role="img"
+ aria-label="cleanyourphone: make an old Android phone fast again. About 60% more free RAM, 20% fewer apps,
+ 2x faster animations. No root, one prompt, every step reversible.">
+<defs>
+ <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0d1117"/><stop offset="1" stop-color="#101a2c"/></linearGradient>
+ <radialGradient id="glow" cx=".5" cy=".35" r=".6"><stop offset="0" stop-color="#2ea043" stop-opacity=".22"/><stop offset="1" stop-color="#2ea043" stop-opacity="0"/></radialGradient>
+</defs>
+<style>
+ @keyframes pop{0%{opacity:0;transform:scale(.6)}8%{opacity:1;transform:scale(1)}85%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.95)}}
+ @keyframes breathe{0%,100%{opacity:.7}50%{opacity:1}}
+ @keyframes sweep{0%{transform:translateX(-120px)}100%{transform:translateX(1060px)}}
+ .glow{animation:breathe 5s ease-in-out infinite}
+ .sweep{animation:sweep 6s linear infinite}
+ .p0{animation:pop 6s cubic-bezier(.2,.9,.3,1.3) infinite;animation-delay:0.6s;opacity:0;transform-box:fill-box;transform-origin:center}.p1{animation:pop 6s cubic-bezier(.2,.9,.3,1.3) infinite;animation-delay:0.9s;opacity:0;transform-box:fill-box;transform-origin:center}.p2{animation:pop 6s cubic-bezier(.2,.9,.3,1.3) infinite;animation-delay:1.3s;opacity:0;transform-box:fill-box;transform-origin:center}
+</style>
+<rect width="940" height="300" rx="16" fill="url(#bg)"/>
+<rect class="glow" width="940" height="300" rx="16" fill="url(#glow)"/>
+<g opacity=".05" class="sweep"><rect x="0" y="0" width="80" height="300" fill="#ffffff" transform="skewX(-20)"/></g>
+<text x="470" y="98" text-anchor="middle" fill="#ffffff" style="font:800 54px -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:-1px">clean<tspan fill="#7ee787">your</tspan>phone</text>
+<text x="470" y="142" text-anchor="middle" fill="#c9d1d9" style="font:400 21px -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">Make an old Android phone fast again: less bloat, fewer ads, measured.</text>
+<text x="470" y="172" text-anchor="middle" fill="#8b949e" style="font:400 15px -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">No root · one prompt · every step reversible</text>
+<g class="p0"><rect x="113" y="196" width="228" height="44" rx="22" fill="#12261a" stroke="#2ea043"/><text x="226" y="224" text-anchor="middle" fill="#7ee787" style="font:600 17px -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">~60% more free RAM</text></g><g class="p1"><rect x="356" y="196" width="197" height="44" rx="22" fill="#12261a" stroke="#2ea043"/><text x="455" y="224" text-anchor="middle" fill="#7ee787" style="font:600 17px -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">~20% fewer apps</text></g><g class="p2"><rect x="569" y="196" width="258" height="44" rx="22" fill="#12261a" stroke="#2ea043"/><text x="698" y="224" text-anchor="middle" fill="#7ee787" style="font:600 17px -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">~2× faster animations</text></g>
+<text x="470" y="278" text-anchor="middle" fill="#8b949e" style="font:400 13px -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">Measured on a 2020 realme 7 · approximate, rounded to 5%</text>
+</svg>
