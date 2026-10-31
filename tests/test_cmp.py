@@ -63,7 +63,7 @@ class FakePhoneTest(unittest.TestCase):
                 for line in output.splitlines() if line.split(":", 1)[0] in ("RESULT", "SUMMARY", "NEXT", "ASK_USER")}
 
     def adb_calls(self):
-        with open(self.env["CYP_FAKE_LOG"]) as f:
+        with open(self.env["CYP_FAKE_LOG"], encoding="utf-8") as f:
             return [json.loads(line) for line in f]
 
 
@@ -98,7 +98,7 @@ class TestRealme7(FakePhoneTest):
         [snap] = journal.backups(os.path.basename(device))
         for name in ("packages-all.txt", "packages-disabled.txt", "settings-secure.txt", "getprop.txt", "meta.json"):
             self.assertTrue(os.path.getsize(os.path.join(snap, name)) > 0, name)
-        with open(os.path.join(snap, "meta.json")) as f:
+        with open(os.path.join(snap, "meta.json"), encoding="utf-8") as f:
             meta = json.load(f)
         self.assertEqual(meta["roles"]["android.app.role.HOME"], ["app.olauncher"])
         self.assertNotIn(SERIAL, json.dumps(meta))
@@ -134,16 +134,16 @@ class TestApplyRestore(FakePhoneTest):
 
     def write_list(self, *pkgs):
         path = os.path.join(self.tmp.name, "list.txt")
-        with open(path, "w") as f:
+        with open(path, "w", encoding="utf-8") as f:
             f.write("# test list\n" + "\n".join(pkgs) + "\n")
         return path
 
     def phone_state(self):
-        with open(self.env["CYP_FAKE_STATE"]) as f:
+        with open(self.env["CYP_FAKE_STATE"], encoding="utf-8") as f:
             return {k: (v if k in ("settings", "buckets") else set(v)) for k, v in json.load(f).items()}
 
     def save_phone_state(self, state):
-        with open(self.env["CYP_FAKE_STATE"], "w") as f:
+        with open(self.env["CYP_FAKE_STATE"], "w", encoding="utf-8") as f:
             json.dump({k: (v if k in ("settings", "buckets") else sorted(v)) for k, v in state.items()}, f)
 
     def entries(self):
@@ -278,7 +278,7 @@ class TestKnowledgeBase(unittest.TestCase):
     def test_starter_lists_say_so(self):
         for folder, meta in kb.device_folders():
             if meta["status"] == "starter":
-                with open(os.path.join(folder, "debloat.txt")) as f:
+                with open(os.path.join(folder, "debloat.txt"), encoding="utf-8") as f:
                     self.assertIn("STARTER LIST, UNTESTED", f.read(), folder)
 
 
@@ -307,7 +307,7 @@ class TestTuneAdblockBench(TestApplyRestore):
         os.environ["CYP_FAKE_REFUSE_SETTINGS"] = "1"
         code, out = self.run_cmp("tune")
         f = self.footer(out)
-        self.assertEqual(f["NEXT"], "./cmp tune --ui")
+        self.assertEqual(f["NEXT"], cmp.CMD + " tune --ui")
         self.assertIn("Unlock the phone", f["ASK_USER"])
         self.assertEqual(self.settings()["global/window_animation_scale"], "1.0")
         os.environ["CYP_FAKE_LOCKED"] = "1"
@@ -399,8 +399,8 @@ class TestGo(FakePhoneTest):
             os.chdir(cwd)
         self.assertEqual(code, 0, out)
         self.assertIn("DONE", out)
-        self.assertIn("undo everything: ./cmp restore", out)
-        with open(self.env["CYP_FAKE_STATE"]) as f:
+        self.assertIn("undo everything: %s restore" % cmp.CMD, out)
+        with open(self.env["CYP_FAKE_STATE"], encoding="utf-8") as f:
             state = json.load(f)
         gone = set(state["disabled"]) | set(state["uninstalled"]) | set(state["suspended"])
         self.assertIn("com.heytap.browser", gone)
@@ -452,16 +452,126 @@ class TestRarelyUsed(FakePhoneTest):
         finally:
             os.chdir(cwd)
         self.assertEqual(code, 0, out)
-        with open(self.env["CYP_FAKE_STATE"]) as fh:
+        with open(self.env["CYP_FAKE_STATE"], encoding="utf-8") as fh:
             state = json.load(fh)
         self.assertIn("com.example.neveropened", state["uninstalled"])
         self.assertEqual(state["buckets"]["com.example.rarelyused"], 45, "kept but rarely used: restricted")
         self.assertIn("blocked from the background: 1", out)
         code, out = self.run_cmp("restore")
-        with open(self.env["CYP_FAKE_STATE"]) as fh:
+        with open(self.env["CYP_FAKE_STATE"], encoding="utf-8") as fh:
             state = json.load(fh)
         self.assertNotIn("com.example.neveropened", state["uninstalled"])
         self.assertEqual(state["buckets"]["com.example.rarelyused"], 40)
+
+
+class TestReviewFixes(FakePhoneTest):
+    """Regression tests for the second review round."""
+
+    def go_once(self):
+        out_path = os.path.join(self.tmp.name, "go.txt")
+        self.run_cmp("go", "--out", out_path)
+        return out_path
+
+    def go_yes(self, out_path, *extra):
+        cwd = os.getcwd()
+        os.chdir(self.tmp.name)
+        try:
+            return self.run_cmp("go", "--yes", "--out", out_path, *extra)
+        finally:
+            os.chdir(cwd)
+
+    def test_keep_by_mixed_case_package_name_keeps_it(self):
+        out_path = self.go_once()
+        code, out = self.go_yes(out_path, "--keep", "com.heytap.themestore")
+        with open(self.env["CYP_FAKE_STATE"], encoding="utf-8") as f:
+            state = json.load(f)
+        self.assertNotIn("com.heytap.themestore", state["suspended"])
+
+    def test_keep_with_a_typo_changes_nothing(self):
+        out_path = self.go_once()
+        code, out = self.go_yes(out_path, "--keep", "2-4")
+        self.assertEqual(code, 2)
+        self.assertIn("didn't understand --keep 2-4", self.footer(out)["SUMMARY"])
+        self.assertEqual([e for e in journal.Journal(cmp.Phone(SERIAL).id).entries() if e["action"] == "remove"], [])
+
+    def test_uninstall_with_a_bad_letter_stops(self):
+        out_path = self.go_once()
+        code, out = self.go_yes(out_path, "--uninstall", "z")
+        self.assertEqual(code, 2)
+        self.assertIn("--uninstall z", self.footer(out)["SUMMARY"])
+
+    def test_first_call_deletes_stale_lists(self):
+        out_path = os.path.join(self.tmp.name, "go.txt")
+        with open(out_path, "w", encoding="utf-8") as f:
+            f.write("# Old group\ncom.whatsapp\n")
+        self.run_cmp("go", "--out", out_path)
+        self.assertNotIn("com.whatsapp", safety.read_list(out_path))
+
+    def test_restore_last_after_go_undoes_every_uninstall(self):
+        out_path = self.go_once()
+        self.go_yes(out_path, "--keep", "1 2 3 4 5 6 7 8 9", "--uninstall", "a b")
+        code, out = self.run_cmp("restore", "--last")
+        with open(self.env["CYP_FAKE_STATE"], encoding="utf-8") as f:
+            state = json.load(f)
+        self.assertEqual(set(state["uninstalled"]) & {"com.example.neveropened", "com.example.rarelyused"}, set())
+
+    def test_rare_app_that_became_protected_is_left_alone(self):
+        out_path = self.go_once()
+        with open(out_path + ".rare.json", encoding="utf-8") as f:
+            rare = json.load(f)
+        rare.append("com.google.android.dialer")  # e.g. a list from another run, or a new default app
+        with open(out_path + ".rare.json", "w", encoding="utf-8") as f:
+            json.dump(rare, f)
+        letter = cmp.LETTERS[len(rare) - 1]
+        self.go_yes(out_path, "--keep", "none", "--uninstall", letter)
+        with open(self.env["CYP_FAKE_STATE"], encoding="utf-8") as f:
+            state = json.load(f)
+        self.assertNotIn("com.google.android.dialer", state["uninstalled"])
+
+    def test_apply_skips_owner_installed_copies(self):
+        self.run_cmp("backup")
+        path = os.path.join(self.tmp.name, "l.txt")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write("com.linkedin.android\n")
+        code, out = self.run_cmp("apply", path, "--yes")
+        self.assertIn("installed by you, not preinstalled; kept", out)
+
+
+class TestJournalEdgeCases(unittest.TestCase):
+    def test_pending_removal_is_restorable(self):
+        import actions
+        entries = [{"action": "remove", "pkg": "a.b", "method": "disable", "result": "pending"}]
+        self.assertEqual(actions.active_removals(entries), [("a.b", "disable")])
+        entries.append({"action": "remove", "pkg": "a.b", "method": "disable", "result": "refused"})
+        self.assertEqual(actions.active_removals(entries), [])
+
+    def test_refused_setting_is_not_active_but_pending_is(self):
+        import actions
+        base = {"action": "setting", "ns": "global", "key": "k", "before": "1.0"}
+        self.assertEqual(actions.active_settings([dict(base, result="pending")]), [("global", "k", "1.0")])
+        self.assertEqual(actions.active_settings([dict(base, result="pending"), dict(base, result="refused")]), [])
+        self.assertEqual(actions.active_settings([dict(base, result="pending"), dict(base, result="refused"),
+                                                  dict(base, result="ok")]), [("global", "k", "1.0")])
+
+    def test_truncated_journal_line_is_skipped(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            os.environ["CYP_HOME"] = tmp
+            try:
+                j = journal.Journal("x")
+                j.append(pkg="a.b", action="remove", method="disable", result="ok")
+                with open(j.path, "a", encoding="utf-8") as f:
+                    f.write('{"pkg": "c.d", "act')
+                self.assertEqual(len(j.entries()), 1)
+            finally:
+                os.environ.pop("CYP_HOME")
+
+    def test_keep_lines_are_not_headings(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False, encoding="utf-8") as f:
+            f.write("# Ads\n# keep: a.one\nb.two\n")
+        try:
+            self.assertEqual(kb.parse_list(f.name), [("b.two", "Ads", "")])
+        finally:
+            os.unlink(f.name)
 
 
 class TestApprox(unittest.TestCase):
@@ -484,24 +594,48 @@ class TestApprox(unittest.TestCase):
 class TestNoPhone(FakePhoneTest):
     fixture = "none"
 
-    def test_doctor_asks_to_plug_in(self):
-        code, out = self.run_cmp("doctor")
+    def test_doctor_stops_with_steps_and_no_question(self):
+        cmp.wait_for_access.__defaults__ = (0, 0)
+        try:
+            code, out = self.run_cmp("doctor")
+        finally:
+            cmp.wait_for_access.__defaults__ = (10, 45)
         f = self.footer(out)
         self.assertEqual((code, f["RESULT"]), (2, "stop"))
-        self.assertIn("USB debugging", f["ASK_USER"])
+        self.assertIn("ERROR: no phone with USB debugging found", out)
+        self.assertIn("Build number", out)
+        self.assertIn("run again", f["SUMMARY"])
+        self.assertNotIn("ASK_USER", f)
+        self.assertNotIn("NEXT", f)
+
+    def test_go_stops_the_same_way(self):
+        cmp.wait_for_access.__defaults__ = (0, 0)
+        try:
+            code, out = self.run_cmp("go")
+        finally:
+            cmp.wait_for_access.__defaults__ = (10, 45)
+        self.assertEqual(code, 2)
+        self.assertNotIn("ASK_USER", self.footer(out))
 
     def test_probe_stops(self):
         code, out = self.run_cmp("probe")
         self.assertEqual(code, 2)
-        self.assertIn("connect", self.footer(out)["NEXT"])
+        self.assertIn("no phone with USB debugging found", self.footer(out)["SUMMARY"])
 
 
 class TestUnauthorized(FakePhoneTest):
     fixture = "unauthorized"
 
-    def test_doctor_asks_to_tap_allow(self):
-        code, out = self.run_cmp("doctor")
-        self.assertIn("Allow", self.footer(out)["ASK_USER"])
+    def test_doctor_waits_for_allow_then_stops(self):
+        cmp.wait_for_access.__defaults__ = (0, 0)
+        try:
+            code, out = self.run_cmp("doctor")
+        finally:
+            cmp.wait_for_access.__defaults__ = (10, 45)
+        self.assertEqual(code, 2)
+        self.assertIn("tap 'Allow'", out)
+        self.assertIn("hasn't allowed this computer", self.footer(out)["SUMMARY"])
+        self.assertNotIn("ASK_USER", self.footer(out))
 
 
 class TestMissingAdb(FakePhoneTest):
@@ -548,7 +682,7 @@ class TestSafety(unittest.TestCase):
         for folder in glob.glob(os.path.join(ROOT, "devices", "*", "")):
             if not os.path.exists(os.path.join(folder, "debloat.txt")):
                 continue
-            with open(os.path.join(folder, "phone.json")) as f:
+            with open(os.path.join(folder, "phone.json"), encoding="utf-8") as f:
                 meta = json.load(f)
             self.assertIn(meta["status"], ("tested", "starter"), folder)
             for key in ("phone", "brand", "os", "notes"):

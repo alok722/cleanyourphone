@@ -19,7 +19,7 @@ GUARDED_ROLES = {
 
 def load_never(path=NEVER_FILE):
     exact, prefixes = set(), []
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         for line in f:
             entry = line.split("#", 1)[0].strip()
             if not entry:
@@ -45,7 +45,7 @@ def never_reason(pkg, never=None):
 def read_list(path):
     """Package names from a debloat list: one per line, # comments allowed anywhere."""
     pkgs = []
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         for line in f:
             entry = line.split("#", 1)[0].strip()
             if entry:
@@ -57,7 +57,7 @@ def lint_list(path, never=None):
     """[(line_no, package, problem)] for a debloat list; empty means it is safe to apply."""
     never = never or load_never()
     problems, seen = [], set()
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         for no, line in enumerate(f, 1):
             entry = line.split("#", 1)[0].strip()
             if not entry:

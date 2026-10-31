@@ -1,14 +1,13 @@
 """Speed settings (`cmp tune`) and ad blocking (`cmp adblock`).
 
-Every change goes through actions.set_setting, so it is journaled with the phone's own value first
-and `cmp restore` can put it back. Where the firmware refuses `settings put`, a recipe taps through
+cmp.py makes every change through actions.set_setting, so it is journaled with the phone's own value
+first and `cmp restore` can put it back. Where the firmware refuses `settings put`, a recipe taps through
 Settings instead (only with --ui, screen unlocked), and failing that the person is told where to tap.
 """
 import json
 import os
 import re
 
-import actions
 import ui
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -94,7 +93,7 @@ PRIVATE_DNS_MANUAL = ("Open Settings, search for 'Private DNS', choose 'Private 
 
 
 def oem_ad_switches(skin):
-    with open(os.path.join(ROOT, "data", "oem-ad-switches.json")) as f:
+    with open(os.path.join(ROOT, "data", "oem-ad-switches.json"), encoding="utf-8") as f:
         switches = json.load(f)
     steps = []
     for prefix, items in switches.items():

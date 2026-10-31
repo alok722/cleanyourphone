@@ -15,10 +15,12 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def parse_list(path):
     """[(package, group, note)] from one debloat list."""
     rows, group = [], "Other"
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         for line in f:
             text = line.rstrip("\n")
             stripped = text.strip()
+            if stripped.startswith("# keep:"):
+                continue  # a package the owner chose to keep (cmp go), not a heading
             if stripped.startswith("#"):
                 heading = stripped.lstrip("#").strip()
                 # A heading is a short comment line right before packages; long prose is header text.
@@ -36,7 +38,7 @@ def device_folders(root=ROOT):
     """[(folder, meta)] for every device list, tested ones first."""
     folders = []
     for meta_path in sorted(glob.glob(os.path.join(root, "devices", "*", "phone.json"))):
-        with open(meta_path) as f:
+        with open(meta_path, encoding="utf-8") as f:
             meta = json.load(f)
         folders.append((os.path.dirname(meta_path), meta))
     folders.sort(key=lambda fm: fm[1].get("status") != "tested")

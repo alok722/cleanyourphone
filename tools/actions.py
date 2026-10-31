@@ -56,6 +56,8 @@ def remove(phone, pkg, log, batch=None, run=None, methods=METHODS):
         if after != before:
             # The phone changed state some other way: undo that before trying the next method.
             undo(phone, pkg, after)
+            log.append(action="remove", pkg=pkg, method=method, before=before, run=run, batch=batch,
+                       result="undone", detail="state was %s, now %s" % (after, state(phone, pkg)))
     return None
 
 
@@ -86,16 +88,27 @@ def last_batch(entries):
 
 
 def active_removals(entries):
-    """[(pkg, method)] removed by cleanyourphone and not restored since, oldest first."""
-    current = {}
+    """[(pkg, method)] removed by cleanyourphone and not restored since, oldest first.
+
+    A removal whose last journal line is still "pending" counts too: the `pm` command may have run
+    before an interruption, and restoring a package that is already enabled is harmless.
+    """
+    current, pending = {}, {}
     for e in entries:
-        if e.get("result") != "ok":
-            continue
+        pkg, result = e.get("pkg"), e.get("result")
         if e.get("action") == "remove":
-            current.pop(e["pkg"], None)
-            current[e["pkg"]] = e["method"]
-        elif e.get("action") == "restore":
-            current.pop(e["pkg"], None)
+            if result == "pending":
+                pending[pkg] = e["method"]
+            else:
+                pending.pop(pkg, None)
+            if result == "ok":
+                current.pop(pkg, None)
+                current[pkg] = e["method"]
+        elif e.get("action") == "restore" and result == "ok":
+            current.pop(pkg, None)
+            pending.pop(pkg, None)
+    for pkg, method in pending.items():
+        current.setdefault(pkg, method)
     return list(current.items())
 
 
@@ -151,12 +164,17 @@ def active_settings(entries):
     """[(ns, key, before)] changed by cleanyourphone and not put back since, oldest first."""
     current = {}
     for e in entries:
-        if e.get("result") != "ok":
-            continue
-        if e.get("action") == "setting":
-            k = (e["ns"], e["key"])
-            # Keep the earliest "before": that is the phone's own value.
-            current.setdefault(k, e["before"])
-        elif e.get("action") == "restore_setting":
+        result = e.get("result")
+        if e.get("action") == "setting" and result in ("ok", "pending"):
+            # Keep the earliest "before": that is the phone's own value. A trailing "pending" counts:
+            # the write may have landed before an interruption, and writing the old value back is harmless.
+            current.setdefault((e["ns"], e["key"]), e["before"])
+        elif e.get("action") == "restore_setting" and result == "ok":
             current.pop((e["ns"], e["key"]), None)
-    return [(ns, key, before) for (ns, key), before in current.items()]
+    settled = {}
+    for e in entries:
+        if e.get("action") == "setting":
+            settled[(e["ns"], e["key"])] = e.get("result")
+    # A change whose last line is refused or failed never landed (set_setting reads the value back).
+    return [(ns, key, before) for (ns, key), before in current.items()
+            if settled.get((ns, key)) not in ("refused", "failed")]

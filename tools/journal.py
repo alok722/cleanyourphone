@@ -30,13 +30,13 @@ def device_dir(device_id):
 
 def save_current(serial):
     os.makedirs(home(), exist_ok=True)
-    with open(os.path.join(home(), "current"), "w") as f:
+    with open(os.path.join(home(), "current"), "w", encoding="utf-8") as f:
         f.write(serial)
 
 
 def load_current():
     try:
-        with open(os.path.join(home(), "current")) as f:
+        with open(os.path.join(home(), "current"), encoding="utf-8") as f:
             return f.read().strip() or None
     except OSError:
         return None
@@ -61,7 +61,7 @@ class Journal:
 
     def append(self, **entry):
         entry.setdefault("ts", time.strftime("%Y-%m-%dT%H:%M:%S"))
-        with open(self.path, "a") as f:
+        with open(self.path, "a", encoding="utf-8") as f:
             f.write(json.dumps(entry, sort_keys=True) + "\n")
             f.flush()
             os.fsync(f.fileno())
@@ -70,8 +70,14 @@ class Journal:
     def entries(self):
         if not os.path.exists(self.path):
             return []
-        with open(self.path) as f:
-            return [json.loads(line) for line in f if line.strip()]
+        entries = []
+        with open(self.path, encoding="utf-8") as f:
+            for line in f:
+                try:
+                    entries.append(json.loads(line))
+                except ValueError:
+                    pass  # a line cut short by a crash; the lines around it still count
+        return entries
 
 
 class State:
@@ -80,7 +86,7 @@ class State:
 
     def load(self):
         try:
-            with open(self.path) as f:
+            with open(self.path, encoding="utf-8") as f:
                 return json.load(f)
         except (OSError, ValueError):
             return {}
@@ -88,6 +94,6 @@ class State:
     def update(self, **values):
         data = self.load()
         data.update(values)
-        with open(self.path, "w") as f:
+        with open(self.path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, sort_keys=True)
         return data

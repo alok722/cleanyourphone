@@ -83,7 +83,10 @@ class Phone:
     def __init__(self, serial, adb=None):
         self.serial = serial
         self.adb = adb or find_adb()
-        self.id = device_id(serial)
+        # The hardware serial, not the adb transport serial: over Wireless debugging the transport is
+        # "ip:port" and changes on every reconnect, which would orphan the journal.
+        hw = self.getprop("ro.serialno")
+        self.id = device_id(hw if hw and "Exception" not in hw else serial)
 
     def adb_cmd(self, args, timeout=60):
         return run_adb(args, serial=self.serial, timeout=timeout, adb=self.adb)
@@ -108,9 +111,21 @@ class Phone:
 
     def role_holders(self, role):
         text = self.out("cmd role get-role-holders " + role)
-        if "Exception" in text or "Unknown command" in text:
-            return []
-        return [p for p in text.replace(";", " ").split() if "." in p]
+        if "Exception" not in text and "Unknown command" not in text and "Can't find service" not in text:
+            return [p for p in text.replace(";", " ").split() if "." in p]
+        # Before Android 10 there are no roles; ask the older APIs.
+        if role.endswith(".SMS"):
+            value = self.setting("secure", "sms_default_application")
+            return [value] if value else []
+        if role.endswith(".DIALER"):
+            value = self.out("telecom get-default-dialer").strip()
+            return [value] if "." in value and " " not in value else []
+        if role.endswith(".HOME"):
+            lines = self.out("cmd package resolve-activity --brief -a android.intent.action.MAIN "
+                             "-c android.intent.category.HOME").splitlines()
+            comp = lines[-1].strip() if lines else ""
+            return [comp.split("/", 1)[0]] if "/" in comp else []
+        return []
 
     def setting(self, namespace, key):
         value = self.out("settings get %s %s" % (namespace, key))

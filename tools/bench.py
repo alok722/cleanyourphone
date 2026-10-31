@@ -141,13 +141,13 @@ def write_report(before, after, out_dir, title):
     lines = compare(before, after)
     stamp = time.strftime("%Y%m%d-%H%M%S")
     md = os.path.join(out_dir, "report-%s.md" % stamp)
-    with open(md, "w") as f:
+    with open(md, "w", encoding="utf-8") as f:
         f.write("# %s\n\n" % title)
         for line in lines:
             f.write("- %s\n" % line)
         f.write("\nMeasured with cleanyourphone `cmp bench`, before and after. Approximate, rounded to 5%.\n")
     svg = os.path.join(out_dir, "card-%s.svg" % stamp)
-    with open(svg, "w") as f:
+    with open(svg, "w", encoding="utf-8") as f:
         f.write(card_svg(title, lines))
     png = os.path.join(out_dir, "card-%s.png" % stamp)
     if not card_png(title, lines, png):
@@ -200,6 +200,6 @@ def card_png(title, lines, path):
 def save(data, folder, label):
     os.makedirs(folder, exist_ok=True)
     path = os.path.join(folder, "%s-%s.json" % (time.strftime("%Y%m%d-%H%M%S"), label))
-    with open(path, "w") as f:
+    with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, sort_keys=True)
     return path

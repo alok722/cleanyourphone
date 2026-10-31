@@ -64,7 +64,7 @@ def rarely_used(phone, protected, days=30):
     return sorted(found, key=lambda r: -r[1])
 
 
-def label(phone, pkg):
+def label(pkg):
     """A readable name: the package's last meaningful part (adb has no app-label query)."""
     parts = [p for p in pkg.split(".") if p not in ("com", "org", "in", "app", "android", "mobile", "customer")]
     return (parts[-1] if parts else pkg).replace("_", " ")
@@ -78,7 +78,7 @@ def bucket(phone, pkg):
 def restrict(phone, pkg, log):
     """Put an app in the restricted standby bucket. True when the phone confirms it."""
     before = bucket(phone, pkg)
-    if before is None or before >= 45:
+    if before not in (10, 20, 30, 40):  # exempted (5) and already restricted/never (45, 50) stay as they are
         return False
     log.append(action="bucket", pkg=pkg, before=before, after=45, result="pending")
     phone.out("am set-standby-bucket %s restricted" % pkg)
@@ -89,7 +89,7 @@ def restrict(phone, pkg, log):
 
 def unrestrict(phone, pkg, before, log):
     phone.out("am set-standby-bucket %s %s" % (pkg, BUCKETS.get(before, "rare")))
-    ok = bucket(phone, pkg) != 45
+    ok = bucket(phone, pkg) == before if before in BUCKETS else bucket(phone, pkg) != 45
     log.append(action="restore_bucket", pkg=pkg, before=before, result="ok" if ok else "failed")
     return ok
 
@@ -98,10 +98,11 @@ def active_restrictions(entries):
     """[(pkg, before)] restricted by cleanyourphone and not put back since."""
     current = {}
     for e in entries:
-        if e.get("result") != "ok":
-            continue
-        if e.get("action") == "bucket":
+        result = e.get("result")
+        if e.get("action") == "bucket" and result in ("ok", "pending"):
             current.setdefault(e["pkg"], e["before"])
-        elif e.get("action") == "restore_bucket":
+        elif e.get("action") == "bucket" and result == "refused":
+            current.pop(e["pkg"], None)
+        elif e.get("action") == "restore_bucket" and result == "ok":
             current.pop(e["pkg"], None)
     return list(current.items())

@@ -26,9 +26,10 @@ protected in code ([`data/never.txt`](data/never.txt)), whatever a list or an as
 ## Quick start
 
 1. **On the phone:** Settings → About phone → tap **Build number** 7 times → Developer options →
-   **USB debugging** on. Connect it to your computer with a USB data cable.
+   **USB debugging** on. Set Settings → Display → **Screen timeout to 30 minutes** (or the longest option) and keep
+   the phone unlocked while it runs. Connect it to your computer with a USB data cable.
 2. **On your computer:** clone this repo, open the folder in a coding assistant (Claude Code, Gemini CLI,
-   Codex: free tiers are fine) and paste [`PROMPT.md`](PROMPT.md).
+   Codex: free tiers are fine) and paste the contents of [`PROMPT.md`](PROMPT.md).
 3. Tap **Allow** on the phone, answer **one** question (which app groups to keep), and wait about 5 minutes.
 
 Without an assistant it's the same two commands:

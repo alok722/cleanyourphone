@@ -25,7 +25,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 def load(data):
     path = os.environ.get("CYP_FAKE_STATE")
     if path and os.path.exists(path):
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             raw = json.load(f)
         return {k: (v if k in ("settings", "buckets") else set(v)) for k, v in raw.items()}
     return {"disabled": set(data.get("disabled", [])), "uninstalled": set(), "suspended": set(),
@@ -35,7 +35,7 @@ def load(data):
 def save(state):
     path = os.environ.get("CYP_FAKE_STATE")
     if path:
-        with open(path, "w") as f:
+        with open(path, "w", encoding="utf-8") as f:
             json.dump({k: (v if k in ("settings", "buckets") else sorted(v)) for k, v in state.items()}, f)
 
 
@@ -138,14 +138,15 @@ def shell(data, state, cmd):
 
 
 def main(argv):
+    sys.stdout.reconfigure(encoding="utf-8")
     fixture = os.environ.get("CYP_FAKE_PHONE", "realme7")
-    with open(os.path.join(HERE, "fixtures", fixture + ".json")) as f:
+    with open(os.path.join(HERE, "fixtures", fixture + ".json"), encoding="utf-8") as f:
         data = json.load(f)
     if argv[:1] == ["-s"]:
         argv = argv[2:]
     log = os.environ.get("CYP_FAKE_LOG")
     if log:
-        with open(log, "a") as f:
+        with open(log, "a", encoding="utf-8") as f:
             f.write(json.dumps(argv) + "\n")
     if argv[:1] == ["version"]:
         print("Android Debug Bridge version 1.0.41 (fake)")
