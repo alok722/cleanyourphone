@@ -146,17 +146,29 @@ class Phone:
     def booted(self):
         return self.getprop("sys.boot_completed") == "1"
 
-    def reboot_and_wait(self, timeout=300):
+    def reboot_and_wait(self, timeout=420):
+        """Restart and wait until the phone is back over adb and finished booting.
+
+        Some phones (MIUI) take minutes to reappear over USB, or ask to "Allow USB debugging" again,
+        so this polls the device list instead of trusting a single `adb wait-for-device`.
+        """
         self.out("sync")
-        self.adb_cmd(["reboot"], timeout=30)
-        time.sleep(10)
-        self.adb_cmd(["wait-for-device"], timeout=timeout)
+        try:
+            self.adb_cmd(["reboot"], timeout=30)
+        except AdbError:
+            pass  # the connection can drop before adb reports back; the polling below decides
+        time.sleep(15)
         deadline = time.time() + timeout
+        told = False
         while time.time() < deadline:
             try:
-                if self.booted():
+                state = {s: st for s, st, _ in list_devices(adb=self.adb)}.get(self.serial)
+                if state == "device" and self.booted():
                     time.sleep(10)  # let the launcher and services settle
                     return True
+                if state == "unauthorized" and not told:
+                    print("Unlock the phone and tap 'Allow' on 'Allow USB debugging?' if it asks again.")
+                    told = True
             except AdbError:
                 pass
             time.sleep(3)

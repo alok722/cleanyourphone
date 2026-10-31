@@ -104,7 +104,7 @@ ENABLE_DEBUGGING = """\
   4. Unlock the phone and tap "Allow" on "Allow USB debugging?" (tick "Always allow from this computer").
   5. Recommended: Settings > Display > Screen timeout (Auto screen off) to 30 minutes or the longest option,
      and keep the phone unlocked while cleanyourphone runs.
-Then run cleanyourphone again."""
+Then run cleanyourphone again; it picks up where it stopped."""
 
 
 def no_access(footer, state):
@@ -116,7 +116,8 @@ def no_access(footer, state):
     else:
         reason = "no phone with USB debugging found"
     print("\nERROR: %s.\n\nTo give access:\n%s" % (reason, ENABLE_DEBUGGING))
-    footer.stop(reason + "; nothing was changed. Give access (steps above) and run again.")
+    footer.stop(reason + ". Give access (steps above), then run again; it continues where it stopped.",
+                CMD + " go")
 
 
 def wait_for_access(seconds_unplugged=10, seconds_unauthorized=45):
@@ -558,9 +559,14 @@ def cmd_verify(args, footer):
         print("Rebooting (waiting 15 s first so Android writes package state to disk)...")
         time.sleep(15)
         if not phone.reboot_and_wait():
-            footer.stop("the phone did not finish booting within 5 minutes", None,
-                        "The phone hasn't finished booting. Is it stuck on the logo? If it is, tell me and "
-                        "I'll walk you through getting it back.")
+            again = getattr(args, "resume", None) or CMD + " verify --reboot"
+            print("\nERROR: the phone didn't come back over USB within 7 minutes of restarting.\n"
+                  "  1. Wait for it to finish starting, then unlock it.\n"
+                  "  2. Check the cable, pick 'File transfer' if it asks, and tap 'Allow' if it asks again.\n"
+                  "  3. If it is stuck on the logo, hold the power button for 15 seconds to restart it.\n"
+                  "Then run cleanyourphone again: it picks up where it stopped.")
+            footer.stop("the phone didn't come back after the restart; nothing is lost, run again to continue",
+                        again)
             return
     results = checks.run(phone)
     print("Health:")
@@ -819,7 +825,12 @@ def run_step(title, fn, footer, **kwargs):
     if sub.result == "warn" and footer.result == "ok":
         footer.result = "warn"
     if sub.result == "stop":
-        footer.stop(sub.summary, sub.next, sub.ask)
+        nxt = sub.next
+        # Inside `go`, the way back is always `go` (it resumes); never hand the person a chain of steps.
+        if nxt:
+            for step in ("doctor", "connect", "probe", "backup"):
+                nxt = nxt.replace("%s %s" % (CMD, step), CMD + " go")
+        footer.stop(sub.summary, nxt, sub.ask)
     return sub
 
 
@@ -937,8 +948,17 @@ def cmd_go(args, footer):
             if run_step(title, fn, footer, **kw).result == "stop":
                 return
         phone = pick_phone(footer)
+        run = GoRun(phone.id)
+        if run.unfinished():
+            # An earlier run already changed the phone: continue it, no questions, no new "before".
+            print("\nAn earlier run stopped part-way (after: %s). Picking it up; your answers from then still apply."
+                  % run.stage)
+            go_finish(phone, run, footer)
+            return
         print("\n== Measuring (before)")
-        bench.save(bench.measure(phone, interactive=False), bench_dir(phone.id), "before")
+        before = bench.save(bench.measure(phone, interactive=False), bench_dir(phone.id), "before")
+        run.data = {}
+        run.update(stage="asked", started=journal.now(), before=before, out=args.out)
         if run_step("Backup", cmd_backup, footer).result == "stop":
             return
         for stale in (args.out, rare_file(args.out)):
@@ -976,114 +996,176 @@ def cmd_go(args, footer):
     phone = pick_phone(footer)
     if not phone:
         return
-    if not journal.backups(phone.id):
-        footer.stop("run '%s go' first (it backs up the phone)" % CMD, CMD + " go")
+    run = GoRun(phone.id)
+    if run.stage in (None, "done") or not journal.backups(phone.id):
+        footer.stop("run '%s go' first: it backs up the phone and asks what to remove" % CMD, CMD + " go")
         return
-    notes = []
-    removed = 0
-    if os.path.exists(args.out) and args.remove is not None:
-        groups = numbered_groups(args.out)
-        tokens = [t for t in re.split(r"[\s,]+", args.remove.strip()) if t and t.lower() != "none"]
-        bad = [t for t in tokens if not (t.isdigit() and 1 <= int(t) <= len(groups))]
-        if bad:
-            footer.stop("didn't understand --remove %s (use group numbers from the questions); nothing was changed"
-                        % " ".join(bad), CMD + " go")
-            return
-        args.keep = " ".join(str(i) for i in range(1, len(groups) + 1) if str(i) not in tokens) or "none"
-    if os.path.exists(args.out):
-        todo, kept, unknown = keep_choices(args.out, args.keep)
-        if unknown:
-            footer.stop("didn't understand --keep %s (use group numbers from the list, package names, or none); "
-                        "nothing was changed" % " ".join(unknown), CMD + " go")
-            return
-        if kept:
-            print("Keeping: " + ", ".join(kept))
-        if todo:
-            sub = run_step("Removing apps in batches", cmd_apply, footer, list=args.out, batch=5, yes=True, shots=False)
-            if sub.result == "stop":
-                return
-            m = re.match(r"(\d+) disabled, (\d+) uninstalled for user, (\d+) suspended", sub.summary)
-            removed = sum(int(x) for x in m.groups()) if m else 0
+    if run.stage == "asked":
+        run.update(answers={"remove": args.remove, "keep": args.keep, "uninstall": args.uninstall,
+                            "adblock": args.adblock})
+    else:
+        print("Picking up the run started %s where it stopped (after: %s). Your answers from then still apply."
+              % (run.data.get("started"), run.stage))
+    go_finish(phone, run, footer)
 
+
+GO_STAGES = ("asked", "applied", "tuned", "verified", "done")
+
+
+class GoRun:
+    """Progress of one `cmp go` run, so running it again continues instead of starting over.
+
+    Saved in ~/.cleanyourphone/<device-id>/go.json: the stage reached, the answers, the "before"
+    measurement and the totals for the DONE block. A finished run ("done") lets the next `cmp go` start fresh.
+    """
+
+    def __init__(self, device_id):
+        self.path = os.path.join(journal.device_dir(device_id), "go.json")
+        try:
+            with open(self.path, encoding="utf-8") as f:
+                self.data = json.load(f)
+        except (OSError, ValueError):
+            self.data = {}
+
+    @property
+    def stage(self):
+        return self.data.get("stage")
+
+    def reached(self, stage):
+        return self.stage in GO_STAGES and GO_STAGES.index(self.stage) >= GO_STAGES.index(stage)
+
+    def update(self, **values):
+        self.data.update(values)
+        with open(self.path, "w", encoding="utf-8") as f:
+            json.dump(self.data, f, indent=2, sort_keys=True)
+
+    def unfinished(self):
+        return self.stage in GO_STAGES[1:-1]
+
+
+def go_finish(phone, run, footer):
+    """Everything after the questions, in checkpointed stages. Safe to call again after any stop."""
+    answers = run.data.get("answers", {})
+    out = run.data.get("out", "my-list.local.txt")
     log = journal.Journal(phone.id)
-    rare = []
-    if os.path.exists(rare_file(args.out)):
-        with open(rare_file(args.out), encoding="utf-8") as f:
-            rare = json.load(f)
-    tokens = [t for t in re.split(r"[\s,]+", (args.uninstall or "").strip().lower()) if t and t != "none"]
-    bad = [t for t in tokens if len(t) != 1 or t not in LETTERS[:len(rare)]]
-    if bad:
-        footer.stop("didn't understand --uninstall %s (use the letters from the list, or none); nothing more was "
-                    "changed" % " ".join(bad), CMD + " go")
-        return
-    # Re-check at apply time: the list was written by the first call, and the phone may have changed since.
-    never, protected, mine = safety.load_never(), safety.protected_now(phone), phone.packages("-3")
-    shown = rare
-    rare = [p for p in shown if p in mine and p not in protected and not safety.never_reason(p, never)]
-    picked = {shown[LETTERS.index(t)] for t in tokens} & set(rare)
-    if picked:
-        print("\n== Uninstalling apps you picked")
-        run_id = journal.now()
-        for pkg in sorted(picked):
-            method = actions.remove(phone, pkg, log, run=run_id, batch="uninstall", methods=("uninstall_user",))
-            print("  %-48s %s" % (pkg, "uninstalled" if method else "REFUSED, left as it was"))
-            removed += 1 if method else 0
-    restricted = 0
-    for pkg in rare:
-        if pkg not in picked and usage.restrict(phone, pkg, log):
-            restricted += 1
-    if restricted:
-        print("\n== Background\n  %d rarely used app(s) blocked from running in the background" % restricted)
 
-    print("\n== Speed")
-    screen = ui.unlocked(phone)
-    for ns, key, value, recipe, what in tune.speed_targets(phone, skin(phone)):
-        result = actions.set_setting(phone, ns, key, value, log, ui_recipe=recipe, use_ui=screen)
-        print("  %-28s %s" % (key, result))
-        if result in ("refused", "ui_failed"):
-            notes.append("couldn't change %s (%s)" % (what, tune.MANUAL[what]))
-    print("  app caches cleared: about %d MB freed" % tune.trim_caches(phone))
+    if not run.reached("applied"):
+        removed, restricted, notes = 0, 0, []
+        if os.path.exists(out) and answers.get("remove") is not None:
+            groups = numbered_groups(out)
+            tokens = [t for t in re.split(r"[\s,]+", answers["remove"].strip()) if t and t.lower() != "none"]
+            bad = [t for t in tokens if not (t.isdigit() and 1 <= int(t) <= len(groups))]
+            if bad:
+                footer.stop("didn't understand --remove %s (use group numbers from the questions); nothing was "
+                            "changed" % " ".join(bad), CMD + " go")
+                return
+            answers["keep"] = " ".join(str(i) for i in range(1, len(groups) + 1) if str(i) not in tokens) or "none"
+        if os.path.exists(out):
+            todo, kept, unknown = keep_choices(out, answers.get("keep") or "none")
+            if unknown:
+                footer.stop("didn't understand --keep %s (use group numbers from the list, package names, or none); "
+                            "nothing was changed" % " ".join(unknown), CMD + " go")
+                return
+            if kept:
+                print("Keeping: " + ", ".join(kept))
+            if todo:
+                sub = run_step("Removing apps in batches", cmd_apply, footer, list=out, batch=5, yes=True, shots=False)
+                if sub.result == "stop":
+                    return
+                m = re.match(r"(\d+) disabled, (\d+) uninstalled for user, (\d+) suspended", sub.summary)
+                removed = sum(int(x) for x in m.groups()) if m else 0
 
-    if args.adblock and args.adblock.lower() not in ("no", "none", ""):
-        print("\n== Ad blocking")
-        host = tune.PROVIDERS["adguard"][0]
-        r1 = actions.set_setting(phone, "global", "private_dns_specifier", host, log)
-        r2 = actions.set_setting(phone, "global", "private_dns_mode", "hostname", log)
-        if "refused" in (r1, r2):
-            notes.append("ad blocking skipped: this phone only allows it by hand (%s)"
-                         % tune.PRIVATE_DNS_MANUAL.format(host=host))
-        else:
-            blocked, online = tune.ads_blocked(phone)
-            if not online:
-                actions.set_setting(phone, "global", "private_dns_mode", "opportunistic", log)
-                notes.append("ad blocking switched back off: websites stopped loading with it")
-            print("  ads blocked: %s" % ("yes" if blocked else "not yet"))
+        rare = []
+        if os.path.exists(rare_file(out)):
+            with open(rare_file(out), encoding="utf-8") as f:
+                rare = json.load(f)
+        tokens = [t for t in re.split(r"[\s,]+", (answers.get("uninstall") or "").strip().lower())
+                  if t and t != "none"]
+        bad = [t for t in tokens if len(t) != 1 or t not in LETTERS[:len(rare)]]
+        if bad:
+            footer.stop("didn't understand --uninstall %s (use the letters from the list, or none); nothing more "
+                        "was changed" % " ".join(bad), CMD + " go")
+            return
+        # Re-check at apply time: the list was written by the first call, and the phone may have changed since.
+        never, protected, mine = safety.load_never(), safety.protected_now(phone), phone.packages("-3")
+        shown = rare
+        rare = [p for p in shown if p in mine and p not in protected and not safety.never_reason(p, never)]
+        picked = {shown[LETTERS.index(t)] for t in tokens} & set(rare)
+        if picked:
+            print("\n== Uninstalling apps you picked")
+            run_id = journal.now()
+            for pkg in sorted(picked):
+                # Some phone makers block uninstalling their own apps (MIUI: Failure [-1000]); disable those.
+                method = actions.remove(phone, pkg, log, run=run_id, batch="uninstall",
+                                        methods=("uninstall_user", "disable"))
+                print("  %-48s %s" % (pkg, {"uninstall_user": "uninstalled", "disable": "disabled (the phone "
+                                            "blocks uninstalling it)"}.get(method, "REFUSED, left as it was")))
+                removed += 1 if method else 0
+        for pkg in rare:
+            if pkg not in picked and usage.restrict(phone, pkg, log):
+                restricted += 1
+        if restricted:
+            print("\n== Background\n  %d rarely used app(s) blocked from running in the background" % restricted)
+        run.update(stage="applied", removed=removed, restricted=restricted, notes=notes)
 
-    if run_step("Restart and check", cmd_verify, footer, reboot=True).result == "stop":
-        return
+    if not run.reached("tuned"):
+        notes = run.data.get("notes", [])
+        print("\n== Speed")
+        screen = ui.unlocked(phone)
+        for ns, key, value, recipe, what in tune.speed_targets(phone, skin(phone)):
+            result = actions.set_setting(phone, ns, key, value, log, ui_recipe=recipe, use_ui=screen)
+            print("  %-28s %s" % (key, result))
+            note = "couldn't change %s (%s)" % (what, tune.MANUAL[what])
+            if result in ("refused", "ui_failed") and note not in notes:
+                notes.append(note)
+        print("  app caches cleared: about %d MB freed" % tune.trim_caches(phone))
+        adblock = answers.get("adblock") or ""
+        if adblock.lower() not in ("no", "none", ""):
+            print("\n== Ad blocking")
+            host = tune.PROVIDERS["adguard"][0]
+            r1 = actions.set_setting(phone, "global", "private_dns_specifier", host, log)
+            r2 = actions.set_setting(phone, "global", "private_dns_mode", "hostname", log)
+            if "refused" in (r1, r2):
+                notes.append("ad blocking skipped: this phone only allows it by hand (%s)"
+                             % tune.PRIVATE_DNS_MANUAL.format(host=host))
+                print("  the phone blocks this over USB; see the note in DONE")
+            else:
+                blocked, online = tune.ads_blocked(phone)
+                if not online:
+                    actions.set_setting(phone, "global", "private_dns_mode", "opportunistic", log)
+                    notes.append("ad blocking switched back off: websites stopped loading with it")
+                print("  ads blocked: %s" % ("yes" if blocked else "not yet"))
+        run.update(stage="tuned", notes=notes)
+
+    if not run.reached("verified"):
+        if run_step("Restart and check", cmd_verify, footer, reboot=True, resume=CMD + " go").result == "stop":
+            return
+        run.update(stage="verified")
+
     print("\n== Measuring (after)")
     folder = bench_dir(phone.id)
     after = bench.save(bench.measure(phone, interactive=False), folder, "after")
-    befores = sorted(f for f in os.listdir(folder) if f.endswith("-before.json"))
     lines = []
-    if befores:
-        with open(os.path.join(folder, befores[-1]), encoding="utf-8") as f:
+    before_path = run.data.get("before")
+    if before_path and os.path.exists(before_path):
+        with open(before_path, encoding="utf-8") as f:
             before = json.load(f)
         with open(after, encoding="utf-8") as f:
             title = "%s %s" % (phone.getprop("ro.product.manufacturer"), phone.getprop("ro.product.model"))
             md, svg, png, lines = bench.write_report(before, json.load(f), "reports", title)
         print("  card: %s" % (png or svg))
+    removed, restricted = run.data.get("removed", 0), run.data.get("restricted", 0)
     print("\nDONE")
     print("  removed: %d app(s)" % removed)
     if restricted:
         print("  blocked from the background: %d rarely used app(s)" % restricted)
     for line in lines:
         print("  " + line)
-    for note in notes:
+    for note in run.data.get("notes", []):
         print("  note: " + note)
     print("  undo everything: %s restore" % CMD)
+    run.update(stage="done")
     footer.summary = "done: %d app(s) removed%s" % (removed, "; " + "; ".join(lines[:3]) if lines else "")
-
 
 # ---------------------------------------------------------------- lint (offline)
 
@@ -1133,6 +1215,7 @@ def main(argv=None):
     p.add_argument("--shots", action="store_true", help="save a screenshot after each batch to shots/")
     p = sub.add_parser("verify", help="check the phone is healthy; --reboot checks it after a restart")
     p.add_argument("--reboot", action="store_true")
+    p.add_argument("--resume", help=argparse.SUPPRESS)
     p = sub.add_parser("restore", help="undo removals: everything, --last batch, or named packages")
     p.add_argument("packages", nargs="*")
     p.add_argument("--last", action="store_true", help="only the most recent batch")
@@ -1158,7 +1241,7 @@ def main(argv=None):
     try:
         globals()["cmd_" + args.step](args, footer)
     except AdbError as e:
-        footer.stop("adb error: %s" % e, CMD + " doctor")
+        footer.stop("adb error: %s" % e, CMD + (" go" if args.step == "go" else " doctor"))
     except KeyboardInterrupt:
         footer.stop("interrupted; anything already changed is in the journal ('%s restore' undoes it)" % CMD,
                     CMD + " status")

@@ -628,6 +628,77 @@ class TestCheckboxQuestions(FakePhoneTest):
         self.assertIn("--remove 99", self.footer(out)["SUMMARY"])
 
 
+class TestResume(FakePhoneTest):
+    """A stop part-way through `go --yes` must be continued by `go`, without new questions or measurements."""
+
+    def run_in_tmp(self, *argv):
+        cwd = os.getcwd()
+        os.chdir(self.tmp.name)
+        try:
+            return self.run_cmp(*argv)
+        finally:
+            os.chdir(cwd)
+
+    def test_reboot_failure_then_go_resumes_without_asking(self):
+        out_path = os.path.join(self.tmp.name, "go.txt")
+        self.run_cmp("go", "--out", out_path)
+        import phone as phone_mod
+        real = phone_mod.Phone.reboot_and_wait
+        phone_mod.Phone.reboot_and_wait = lambda self, timeout=0: False
+        try:
+            code, out = self.run_in_tmp("go", "--yes", "--remove", "1", "--uninstall", "a", "--out", out_path)
+        finally:
+            phone_mod.Phone.reboot_and_wait = real
+        f = self.footer(out)
+        self.assertEqual(code, 2)
+        self.assertEqual(f["NEXT"], cmp.CMD + " go")
+        self.assertIn("picks up where it stopped", out)
+        bench_dir = os.path.join(self.tmp.name, cmp.Phone(SERIAL).id, "bench")
+        befores = [b for b in os.listdir(bench_dir) if b.endswith("-before.json")]
+        removes = len([e for e in journal.Journal(cmp.Phone(SERIAL).id).entries() if e["action"] == "remove"])
+
+        code, out = self.run_in_tmp("go", "--out", out_path)
+        f = self.footer(out)
+        self.assertEqual(code, 0, out)
+        self.assertIn("Picking it up", out)
+        self.assertNotIn("ASK_JSON", f)
+        self.assertIn("DONE", out)
+        self.assertEqual(len([b for b in os.listdir(bench_dir) if b.endswith("-before.json")]), len(befores),
+                         "no second 'before' measurement")
+        self.assertEqual(len([e for e in journal.Journal(cmp.Phone(SERIAL).id).entries()
+                              if e["action"] == "remove"]), removes, "nothing removed twice")
+        self.assertIn("removed: ", out)
+        self.assertNotIn("removed: 0 app", out, "totals from the first part are kept")
+
+        code, out = self.run_cmp("go", "--out", out_path)
+        self.assertIn("ASK_JSON", self.footer(out), "after DONE, the next go starts fresh")
+
+    def test_go_yes_without_go_first_points_to_go(self):
+        code, out = self.run_cmp("go", "--yes")
+        self.assertEqual(self.footer(out)["NEXT"], cmp.CMD + " go")
+
+    def test_uninstall_falls_back_to_disable_when_blocked(self):
+        out_path = os.path.join(self.tmp.name, "go.txt")
+        self.run_cmp("go", "--out", out_path)
+        fx = os.path.join(ROOT, "tests", "fixtures", "realme7.json")
+        with open(fx, encoding="utf-8") as fh:
+            data = json.load(fh)
+        with open(out_path + ".rare.json", encoding="utf-8") as fh:
+            rare = json.load(fh)
+        letter = cmp.LETTERS[rare.index("com.example.rarelyused")]
+        data["refuse"]["uninstall"].append("com.example.rarelyused")
+        alt = os.path.join(ROOT, "tests", "fixtures", "realme7-miui.json")
+        with open(alt, "w", encoding="utf-8") as fh:
+            json.dump(data, fh)
+        os.environ["CYP_FAKE_PHONE"] = "realme7-miui"
+        try:
+            code, out = self.run_in_tmp("go", "--yes", "--keep", "none", "--uninstall", letter, "--out", out_path)
+        finally:
+            os.environ["CYP_FAKE_PHONE"] = "realme7"
+            os.remove(alt)
+        self.assertIn("disabled (the phone blocks uninstalling it)", out)
+
+
 class TestApprox(unittest.TestCase):
     def test_rounds_to_five_and_hides_noise(self):
         self.assertEqual(bench.approx(65.3), "~65%")
@@ -660,7 +731,7 @@ class TestNoPhone(FakePhoneTest):
         self.assertIn("Build number", out)
         self.assertIn("run again", f["SUMMARY"])
         self.assertNotIn("ASK_USER", f)
-        self.assertNotIn("NEXT", f)
+        self.assertEqual(f["NEXT"], cmp.CMD + " go", "the way back is always go, which resumes")
 
     def test_go_stops_the_same_way(self):
         cmp.wait_for_access.__defaults__ = (0, 0)
