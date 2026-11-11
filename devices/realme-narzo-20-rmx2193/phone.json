@@ -1,0 +1,8 @@
+{
+  "phone": "realme narzo 20 (RMX2193)",
+  "brand": "realme",
+  "os": "Android 11, realme UI 2.0",
+  "status": "tested",
+  "models": ["RMX2193"],
+  "notes": "Glance, Lock Screen Magazine, HeyTap browser/cloud/push, Facebook stubs, MediaTek test tools, Google Lens/Pay/Assistant/Android Auto; settings refused over adb, so animations are set by tapping and Private DNS by hand"
+}

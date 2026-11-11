@@ -63,6 +63,7 @@ On Windows use `.\cmp.ps1` instead of `./cmp`. Every step also exists on its own
 | Phone | Android | Status |
 |---|---|---|
 | [realme 7 (RMX2151)](devices/realme-7-rmx2151/debloat.txt) | 12, realme UI 3.0 | ✅ tested |
+| [realme narzo 20 (RMX2193)](devices/realme-narzo-20-rmx2193/debloat.txt) | 11, realme UI 2.0 | ✅ tested |
 | [Xiaomi Redmi 10 (220333QBI)](devices/xiaomi-redmi-10-220333qbi/debloat.txt) | 13, MIUI 14 | ✅ tested |
 | [Other Xiaomi / Redmi / POCO](devices/xiaomi-starter/debloat.txt) | MIUI 12-14, HyperOS | 🧪 starter, untested |
 | [Samsung Galaxy](devices/samsung-starter/debloat.txt) | One UI 2-6 | 🧪 starter, untested |

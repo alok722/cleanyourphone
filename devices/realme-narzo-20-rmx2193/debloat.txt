@@ -1,0 +1,78 @@
+# realme narzo 20 (RMX2193), Android 11, realme UI 2.0, build RMX2191_11_C.19, security patch 2022-09-05
+# Tested by @alok722 on 11 Nov 2026 with `cmp go`: the seven groups below disabled in ten checked batches
+# (compass kept), restarted, home screen, keyboard, phone, Play Store and proximity sensor fine afterwards.
+# About 45% more free RAM afterwards. Used the same day only, not yet for days.
+#
+# Apply:  ./cmp go   (or ./cmp apply devices/realme-narzo-20-rmx2193/debloat.txt)
+# Undo:   ./cmp restore
+# Comment out any line you want to keep.
+#
+# realme UI 2.0 quirks on this build:
+# - `settings put` is refused unless Developer options > "Disable permission monitoring" is on (it resets at
+#   reboot). cmp taps through Developer options instead; this build calls one row "Transition animation zoom".
+#   Private DNS (ad blocking) has no tap-through yet, so it is set by hand.
+# - Every package here disabled normally; unlike the realme 7, Theme Store did not need suspend.
+# - The phone app is Google's, so realme codes like *#899# give "invalid MMI code". MediaTek's
+#   *#*#3646633#*#* works while its engineer mode is enabled, but has no sensor screens on this build.
+# - Apps you installed yourself and uninstall with `cmp go` come back from the Play Store, not `cmp restore`.
+
+# Test & engineering tools
+com.android.bookmarkprovider                   # Partner bookmarks
+com.android.egg                                # Android version easter egg
+com.android.email.partnerprovider
+com.android.providers.partnerbookmarks         # Partner bookmarks
+com.android.traceur                            # System tracing
+com.debug.loggerui
+com.mediatek.engineermode                      # MediaTek engineer mode (*#*#3646633#*#*); keep if you use it
+com.mediatek.lbs.em2.ui
+com.mediatek.mdmlsample
+
+# realme duplicate apps
+com.coloros.childrenspace                      # Kids Space
+com.coloros.healthcheck                        # Phone Diagnostics
+com.coloros.karaoke
+com.coloros.video                              # realme Video; videos open in another player
+com.heytap.browser                             # realme Browser (ads); Chrome stays
+com.heytap.cloud                               # HeyTap Cloud backup
+com.heytap.music                               # Music
+com.oppo.operationManual
+com.oppoex.afterservice                        # Service Center
+
+# realme extras
+# keep: com.coloros.compass2                   # Compass (kept on the tested phone)
+com.coloros.floatassistant                     # Floating assistant ball
+com.coloros.oshare                             # Share (realme-to-realme); Quick Share/Nearby stays
+com.coloros.smartsidebar                       # Smart sidebar
+com.coloros.weather.service                    # removes weather from the clock widget too
+com.coloros.weather2                           # Weather
+com.realme.movieshot
+com.realme.wellbeing
+
+# Ads & tracking
+com.facebook.appmanager                        # Facebook preinstall stub
+com.facebook.services                          # Facebook preinstall stub
+com.facebook.system                            # Facebook preinstall stub
+com.finshell.fin                               # Finshell loans app
+com.glance.internet                            # Glance lock-screen ads
+com.heytap.mcs                                 # HeyTap push messages (promotional notifications)
+com.heytap.pictorial                           # Lock Screen Magazine
+com.oplus.crashbox
+com.oplus.postmanservice
+com.redteamobile.roaming                       # Redtea international roaming data offers
+
+# Google extras (Lens, AR, Android Auto, Feedback, Google Pay, Assistant)
+com.google.android.apps.googleassistant        # Assistant shortcut
+com.google.android.apps.nbu.paisa.user         # Google Pay (UPI); keep if you pay with it
+com.google.android.apps.restore                # Setup restore helper
+com.google.android.feedback                    # Google Feedback
+com.google.android.gms.location.history        # Location history stub
+com.google.android.printservice.recommendation # Print service recommendations
+com.google.android.projection.gearhead         # Android Auto
+com.google.ar.core                             # ARCore; Maps Live View stops working
+com.google.ar.lens                             # Google Lens
+
+# Assistant (lives inside the Google app)
+com.google.android.googlequicksearchbox        # Google app: removes Assistant, Discover and the search widget; Chrome still searches
+
+# Theme Store
+com.heytap.themestore                          # Theme Store; wallpapers and themes can no longer be changed
