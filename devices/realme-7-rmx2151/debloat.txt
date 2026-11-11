@@ -84,5 +84,5 @@ com.android.hotwordenrollment.okgoogle         # "OK Google" voice training
 # Assistant (lives inside the Google app)
 com.google.android.googlequicksearchbox        # Google app: removes Assistant, Discover and the search widget; Chrome still searches
 
-# Theme Store (needs suspend on this build, see the quirks above)
-com.heytap.themestore                          # Theme Store; wallpapers and themes can no longer be changed
+# Theme Store
+com.heytap.themestore                          # Theme Store; wallpapers and themes can no longer be changed (some builds only allow suspending it)

@@ -43,6 +43,21 @@ MANUAL = {
 }
 
 
+# realme UI, ColorOS and the OxygenOS builds based on it refuse `settings put` from adb unless this
+# Developer options switch is on. It turns itself off at every restart, so it is a hint, not a step.
+PERMISSION_MONITORING_SKINS = ("realme UI", "ColorOS", "OxygenOS")
+PERMISSION_MONITORING = ("this phone blocks settings changes over USB unless Developer options > 'Disable "
+                         "permission monitoring' is on (it switches itself off at every restart); turn it on and "
+                         "the blocked changes can be made with {retry}")
+
+
+def usb_unblock_hint(skin, retry):
+    """How to let adb change settings on this skin, or '' when there is no known switch."""
+    if skin.startswith(PERMISSION_MONITORING_SKINS):
+        return PERMISSION_MONITORING.format(retry=retry)
+    return ""
+
+
 def max_refresh(phone):
     rates = [float(r) for r in re.findall(r"fps=([0-9.]+)", phone.out("dumpsys display"))]
     return max(rates) if rates else None

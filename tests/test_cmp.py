@@ -15,6 +15,8 @@ import bench  # noqa: E402
 import journal  # noqa: E402
 import kb  # noqa: E402
 import safety  # noqa: E402
+import tune  # noqa: E402
+import usage  # noqa: E402
 
 SERIAL = "FAKESERIAL0RMX21"
 
@@ -267,7 +269,7 @@ class TestKnowledgeBase(unittest.TestCase):
         known = kb.load()
         self.assertEqual(known["com.glance.internet"]["group"], "Ads & tracking")
         self.assertEqual(known["com.glance.internet"]["status"], "tested", "tested list wins over starters")
-        self.assertEqual(known["com.heytap.themestore"]["group"], "Theme Store (needs suspend on this build, see the quirks above)")
+        self.assertEqual(known["com.heytap.themestore"]["group"], "Theme Store")
         self.assertEqual(known["com.miui.msa.global"]["status"], "tested", "the Redmi 10 list confirms it")
         self.assertIn("ad service", known["com.miui.msa.global"]["note"])
         self.assertEqual(known["com.samsung.android.rubin.app"]["status"], "starter")
@@ -432,6 +434,8 @@ class TestGo(FakePhoneTest):
         self.assertNotIn("ASK_USER", f)
         self.assertIn("note: couldn't change animations", out)
         self.assertIn("note: ad blocking skipped", out)
+        self.assertIn("Disable permission monitoring", out, "realme gets the switch that unblocks adb")
+        self.assertIn("adblock --provider adguard", out)
 
 
 class TestRarelyUsed(FakePhoneTest):
@@ -447,6 +451,9 @@ class TestRarelyUsed(FakePhoneTest):
         apps = [o for q in questions if q["flag"] == "--uninstall" for o in q["options"]]
         self.assertEqual([o["value"] for o in apps], ["a", "b"])
         self.assertIn("91 days unused", apps[1]["description"])
+        uninstall_q = next(q for q in questions if q["flag"] == "--uninstall")["question"]
+        self.assertIn("Play Store", uninstall_q, "an uninstall must not be sold as a one-command undo")
+        self.assertNotIn("Everything can be restored", f["ASK_USER"])
 
     def test_go_uninstalls_picked_restricts_the_rest_and_restore_undoes_both(self):
         out_path = os.path.join(self.tmp.name, "go.txt")
@@ -463,6 +470,8 @@ class TestRarelyUsed(FakePhoneTest):
         self.assertIn("com.example.neveropened", state["uninstalled"])
         self.assertEqual(state["buckets"]["com.example.rarelyused"], 45, "kept but rarely used: restricted")
         self.assertIn("blocked from the background: 1", out)
+        self.assertIn("undo the uninstalls: reinstall from the Play Store: Neveropened", out)
+        self.assertIn("undo everything else: %s restore" % cmp.CMD, out)
         code, out = self.run_cmp("restore")
         with open(self.env["CYP_FAKE_STATE"], encoding="utf-8") as fh:
             state = json.load(fh)
@@ -627,6 +636,52 @@ class TestCheckboxQuestions(FakePhoneTest):
             os.chdir(cwd)
         self.assertEqual(code, 2)
         self.assertIn("--remove 99", self.footer(out)["SUMMARY"])
+
+    def test_remove_a_group_but_keep_one_app_in_it(self):
+        out_path = os.path.join(self.tmp.name, "go.txt")
+        code, out = self.run_cmp("go", "--out", out_path)
+        self.assertIn("--keep", self.footer(out)["NEXT"], "the agent must learn it can spare single apps")
+        groups = cmp.numbered_groups(out_path)
+        n, pkgs = next((i, p) for i, (g, p) in enumerate(groups, 1) if "com.coloros.weather2" in p)
+        cwd = os.getcwd()
+        os.chdir(self.tmp.name)
+        try:
+            code, out = self.run_cmp("go", "--yes", "--remove", str(n), "--keep", "com.coloros.weather2",
+                                     "--out", out_path)
+        finally:
+            os.chdir(cwd)
+        self.assertEqual(code, 0, out)
+        self.assertIn("Keeping: ", out)
+        with open(self.env["CYP_FAKE_STATE"], encoding="utf-8") as f:
+            state = json.load(f)
+        gone = set(state["disabled"]) | set(state["uninstalled"]) | set(state["suspended"])
+        self.assertNotIn("com.coloros.weather2", gone)
+        self.assertTrue(set(pkgs) - {"com.coloros.weather2"} & gone, "the rest of the group is removed")
+
+    def test_known_app_names_and_capitalised_fallback(self):
+        self.assertEqual(usage.label("com.google.android.apps.bard"), "Gemini")
+        self.assertEqual(usage.label("com.google.android.apps.docs"), "Google Drive")
+        self.assertEqual(usage.label("com.bandhan.mBandhan"), "MBandhan")
+        self.assertEqual(usage.label("com.example.some_tool"), "Some tool")
+
+
+class TestUsbUnblockHint(unittest.TestCase):
+    def test_realme_family_gets_the_permission_monitoring_switch(self):
+        hint = tune.usb_unblock_hint("realme UI V2.0", "./cmp tune")
+        self.assertIn("Disable permission monitoring", hint)
+        self.assertIn("./cmp tune", hint)
+        self.assertEqual(tune.usb_unblock_hint("MIUI V14", "./cmp tune"), "")
+
+    def test_lint_flags_a_group_name_that_points_elsewhere(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False) as f:
+            f.write("# Quirks:\n# - long prose that is not a heading.\n\n# Theme Store (see the quirks above)\n"
+                    "com.heytap.themestore\n")
+        try:
+            problems = safety.lint_list(f.name)
+        finally:
+            os.unlink(f.name)
+        self.assertEqual(len(problems), 1)
+        self.assertIn("points elsewhere", problems[0][2])
 
 
 class TestResume(FakePhoneTest):

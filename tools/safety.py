@@ -6,6 +6,7 @@ Two layers, both enforced in code so no prompt wording can talk an assistant pas
   so a list can never leave the phone without a launcher, a keyboard, or a way to call and text.
 """
 import os
+import re
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 NEVER_FILE = os.path.join(ROOT, "data", "never.txt")
@@ -56,12 +57,23 @@ def read_list(path):
 def lint_list(path, never=None):
     """[(line_no, package, problem)] for a debloat list; empty means it is safe to apply."""
     never = never or load_never()
-    problems, seen = [], set()
+    problems, seen, heading = [], set(), None
     with open(path, encoding="utf-8") as f:
         for no, line in enumerate(f, 1):
             entry = line.split("#", 1)[0].strip()
+            stripped = line.strip()
             if not entry:
+                # Same rule as kb.parse_list: a short comment line becomes the group name people are asked about.
+                text = stripped.lstrip("#").strip()
+                if stripped.startswith("#") and not stripped.startswith("# keep:") and text and len(text) < 90 \
+                        and not text.endswith((".", ":")):
+                    heading = (no, text)
                 continue
+            if heading:
+                if re.search(r"\b(above|below)\b", heading[1], re.I):
+                    problems.append((heading[0], heading[1], "group name points elsewhere in the file; people "
+                                     "see it on its own in the questions, so put the detail in a note"))
+                heading = None
             if " " in entry or not all(part for part in entry.split(".")) or "." not in entry:
                 problems.append((no, entry, "not a package name"))
             elif entry in seen:
