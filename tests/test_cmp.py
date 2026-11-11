@@ -17,6 +17,8 @@ import kb  # noqa: E402
 import safety  # noqa: E402
 import tune  # noqa: E402
 import usage  # noqa: E402
+import ui  # noqa: E402
+from unittest import mock  # noqa: E402
 
 SERIAL = "FAKESERIAL0RMX21"
 
@@ -663,6 +665,38 @@ class TestCheckboxQuestions(FakePhoneTest):
         self.assertEqual(usage.label("com.google.android.apps.docs"), "Google Drive")
         self.assertEqual(usage.label("com.bandhan.mBandhan"), "MBandhan")
         self.assertEqual(usage.label("com.example.some_tool"), "Some tool")
+
+
+class TestUiScrollsOnAnyScreen(unittest.TestCase):
+    class Phone:
+        def __init__(self, wm):
+            self.wm, self.calls = wm, []
+
+        def out(self, cmd, timeout=None):
+            self.calls.append(cmd)
+            return self.wm if cmd == "wm size" else ""
+
+    def swipes(self, phone):
+        return [list(map(int, c.split()[2:6])) for c in phone.calls if c.startswith("input swipe")]
+
+    def test_swipes_stay_on_a_720x1600_screen(self):
+        # realme narzo 20: fixed 1080x2400 swipes started below the screen, so Developer options never scrolled.
+        phone = self.Phone("Physical size: 720x1600\n")
+        with mock.patch.object(ui.time, "sleep"):
+            with self.assertRaises(ui.UiError):
+                ui.scroll_to(phone, "^Window animation scale$", swipes=3)
+        swipes = self.swipes(phone)
+        self.assertEqual(len(swipes), 3)
+        for x1, y1, x2, y2 in swipes:
+            self.assertTrue(0 < x1 < 720 and 0 < y1 < 1600 and 0 < y2 < 1600, swipes)
+            self.assertGreater(y1, y2, "scrolls down the list")
+        durations = [int(c.split()[6]) for c in phone.calls if c.startswith("input swipe")]
+        self.assertTrue(all(d >= 600 for d in durations), "a slow drag, not a fling that skips rows")
+
+    def test_override_size_wins_and_unknown_falls_back(self):
+        self.assertEqual(ui.screen_size(self.Phone("Physical size: 1080x2400\nOverride size: 720x1600\n")),
+                         (720, 1600))
+        self.assertEqual(ui.screen_size(self.Phone("")), (1080, 2400))
 
 
 class TestUsbUnblockHint(unittest.TestCase):

@@ -30,15 +30,16 @@ def _colorful_refresh(phone):
     ui.home(phone)
 
 
+# Row labels as regexes: realme UI 2.0 (Android 11) calls the second one "Transition animation zoom".
 ANIMATIONS = [
     ("window_animation_scale", "Window animation scale"),
-    ("transition_animation_scale", "Transition animation scale"),
+    ("transition_animation_scale", "Transition animation (scale|zoom)"),
     ("animator_duration_scale", "Animator duration scale"),
 ]
 
 MANUAL = {
     "animations": "Settings > About phone > tap Build number 7 times > Developer options > set Window animation "
-                  "scale, Transition animation scale and Animator duration scale to 0.5x",
+                  "scale, Transition animation scale (or zoom) and Animator duration scale to 0.5x",
     "refresh": "Settings > Display > Refresh rate (or Smooth display / Motion smoothness) > the highest option",
 }
 
