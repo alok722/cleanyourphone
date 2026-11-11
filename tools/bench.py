@@ -42,12 +42,10 @@ def scroll_jank(phone):
     phone.out("am force-stop " + pkg)
     phone.out("am start -W -n com.android.settings/.Settings")
     time.sleep(2)
+    size = ui.screen_size(phone)
     phone.out("dumpsys gfxinfo %s reset" % pkg)
     for i in range(8):
-        if i % 2:
-            phone.out("input swipe 540 700 540 1900 180")
-        else:
-            phone.out("input swipe 540 1900 540 700 180")
+        phone.out(ui.swipe_cmd(size, up=bool(i % 2), ms=180))
         time.sleep(0.4)
     out = phone.out("dumpsys gfxinfo " + pkg)
     ui.home(phone)

@@ -695,6 +695,9 @@ def cmd_tune(args, footer):
         return
     if manual:
         footer.warn("set these by hand on the phone: " + " | ".join(tune.MANUAL[w] for w in sorted(set(manual))))
+        hint = tune.usb_unblock_hint(skin(phone), CMD + " tune")
+        if hint:
+            footer.warn(hint)
         footer.ask = "Please make this change on the phone: %s. Tell me when done." % "; ".join(
             tune.MANUAL[w] for w in sorted(set(manual)))
     footer.summary = "speed settings done" if not manual else "speed settings done except: " + ", ".join(manual)
@@ -754,6 +757,9 @@ def cmd_adblock(args, footer):
     print("  %s" % label)
     if "refused" in (r1, r2):
         manual = tune.PRIVATE_DNS_MANUAL.format(host=target)
+        hint = tune.usb_unblock_hint(skin(phone), "%s adblock --provider %s" % (CMD, args.provider))
+        if hint:
+            footer.warn(hint)
         footer.summary = "the phone blocks this change over USB; it needs two taps in Settings"
         footer.next = CMD + " adblock --check"
         footer.ask = "Please do this on the phone: %s. Tell me when it's saved." % manual
@@ -890,7 +896,8 @@ def go_questions(groups, rare, days):
             "Which of these apps (not opened in %d+ days) should I uninstall?" % days, "Apps", "--uninstall",
             [(l, label(pkg), "%s · %s" % ("never opened" if never else "%d days unused" % d, pkg))
              for l, (pkg, d, never) in zip(LETTERS, rare)],
-            "Tick the ones to uninstall; the rest stay but are blocked from running in the background.")
+            "Tick the ones to uninstall; the rest stay but are blocked from running in the background. These are apps "
+            "you installed, so undoing an uninstall means reinstalling it from the Play Store.")
     questions.append({"id": "adblock", "header": "Ad blocking", "flag": "--adblock", "multi_select": False,
                       "question": "Also block ads system-wide with AdGuard DNS?",
                       "options": [{"value": "yes", "label": "Block ads",
@@ -987,9 +994,12 @@ def cmd_go(args, footer):
         footer.questions = go_questions(groups, rare, args.days)
         footer.next = (CMD + " go --yes   then, for each ASK_JSON question, its flag followed by the values of the "
                        "ticked options in quotes, e.g. --remove \"1 3\" --uninstall \"a c\" --adblock \"yes\"; "
-                       "leave a flag out when nothing was ticked")
+                       "leave a flag out when nothing was ticked; to spare single apps inside a ticked group, add "
+                       "--keep with their package names from the list above, e.g. --keep \"com.coloros.compass2\"")
         footer.ask = screen_ask(phone, "Please answer the questions in ASK_JSON (%d of them): tick what to remove or "
-                                "uninstall; anything unticked is kept. Everything can be restored with one command."
+                                "uninstall; anything unticked is kept, and you can name single apps to keep from a "
+                                "group you tick. Preinstalled apps can be restored with one command; apps you uninstall come "
+                                "back by reinstalling them from the Play Store."
                                 % len(footer.questions))
         return
 
@@ -1059,7 +1069,12 @@ def go_finish(phone, run, footer):
                 footer.stop("didn't understand --remove %s (use group numbers from the questions); nothing was "
                             "changed" % " ".join(bad), CMD + " go")
                 return
-            answers["keep"] = " ".join(str(i) for i in range(1, len(groups) + 1) if str(i) not in tokens) or "none"
+            # Unticked groups are kept, and so is anything named in --keep: "remove group 3 but not the
+            # compass in it" is --remove "3" --keep "com.coloros.compass2". Keep always wins over remove.
+            unticked = [str(i) for i in range(1, len(groups) + 1) if str(i) not in tokens]
+            extra = [t for t in re.split(r"[\s,]+", (answers.get("keep") or "").strip())
+                     if t and t.lower() != "none"]
+            answers["keep"] = " ".join(unticked + extra) or "none"
         if os.path.exists(out):
             todo, kept, unknown = keep_choices(out, answers.get("keep") or "none")
             if unknown:
@@ -1091,6 +1106,7 @@ def go_finish(phone, run, footer):
         shown = rare
         rare = [p for p in shown if p in mine and p not in protected and not safety.never_reason(p, never)]
         picked = {shown[LETTERS.index(t)] for t in tokens} & set(rare)
+        gone = []  # owner-installed apps really uninstalled: `cmp restore` can't bring these back
         if picked:
             print("\n== Uninstalling apps you picked")
             run_id = journal.now()
@@ -1101,23 +1117,29 @@ def go_finish(phone, run, footer):
                 print("  %-48s %s" % (pkg, {"uninstall_user": "uninstalled", "disable": "disabled (the phone "
                                             "blocks uninstalling it)"}.get(method, "REFUSED, left as it was")))
                 removed += 1 if method else 0
+                if method == "uninstall_user":
+                    gone.append(pkg)
         for pkg in rare:
             if pkg not in picked and usage.restrict(phone, pkg, log):
                 restricted += 1
         if restricted:
             print("\n== Background\n  %d rarely used app(s) blocked from running in the background" % restricted)
-        run.update(stage="applied", removed=removed, restricted=restricted, notes=notes)
+        run.update(stage="applied", removed=removed, restricted=restricted, notes=notes, play_store=gone)
 
     if not run.reached("tuned"):
         notes = run.data.get("notes", [])
         print("\n== Speed")
         screen = ui.unlocked(phone)
+        retry = []
         for ns, key, value, recipe, what in tune.speed_targets(phone, skin(phone)):
             result = actions.set_setting(phone, ns, key, value, log, ui_recipe=recipe, use_ui=screen)
             print("  %-28s %s" % (key, result))
             note = "couldn't change %s (%s)" % (what, tune.MANUAL[what])
-            if result in ("refused", "ui_failed") and note not in notes:
-                notes.append(note)
+            if result in ("refused", "ui_failed"):
+                if CMD + " tune" not in retry:
+                    retry.append(CMD + " tune")
+                if note not in notes:
+                    notes.append(note)
         print("  app caches cleared: about %d MB freed" % tune.trim_caches(phone))
         adblock = answers.get("adblock") or ""
         if adblock.lower() not in ("no", "none", ""):
@@ -1128,6 +1150,7 @@ def go_finish(phone, run, footer):
             if "refused" in (r1, r2):
                 notes.append("ad blocking skipped: this phone only allows it by hand (%s)"
                              % tune.PRIVATE_DNS_MANUAL.format(host=host))
+                retry.append(CMD + " adblock --provider adguard")
                 print("  the phone blocks this over USB; see the note in DONE")
             else:
                 blocked, online = tune.ads_blocked(phone)
@@ -1135,6 +1158,9 @@ def go_finish(phone, run, footer):
                     actions.set_setting(phone, "global", "private_dns_mode", "opportunistic", log)
                     notes.append("ad blocking switched back off: websites stopped loading with it")
                 print("  ads blocked: %s" % ("yes" if blocked else "not yet"))
+        hint = tune.usb_unblock_hint(skin(phone), " and ".join(retry)) if retry else ""
+        if hint and hint not in notes:
+            notes.append(hint)
         run.update(stage="tuned", notes=notes)
 
     if not run.reached("verified"):
@@ -1163,7 +1189,10 @@ def go_finish(phone, run, footer):
         print("  " + line)
     for note in run.data.get("notes", []):
         print("  note: " + note)
-    print("  undo everything: %s restore" % CMD)
+    play_store = run.data.get("play_store") or []
+    if play_store:
+        print("  undo the uninstalls: reinstall from the Play Store: %s" % ", ".join(label(p) for p in play_store))
+    print("  undo %s: %s restore" % ("everything else" if play_store else "everything", CMD))
     run.update(stage="done")
     footer.summary = "done: %d app(s) removed%s" % (removed, "; " + "; ".join(lines[:3]) if lines else "")
 
@@ -1194,7 +1223,8 @@ def main(argv=None):
     p = sub.add_parser("go", help="the whole job in two calls: read-only first (one question), then --yes")
     p.add_argument("--yes", action="store_true", help="apply: remove, tune, reboot-check, measure, report")
     p.add_argument("--remove", help="group numbers to remove, e.g. '1 3' (the rest are kept)")
-    p.add_argument("--keep", default="none", help="or: group numbers and/or package names to keep, e.g. '2 5'")
+    p.add_argument("--keep", default="none", help="group numbers and/or package names to keep, e.g. '2 5'; "
+                   "with --remove, package names spared from the groups being removed")
     p.add_argument("--uninstall", default="none", help="letters of rarely used apps to uninstall, e.g. 'a c'")
     p.add_argument("--adblock", nargs="?", const="yes", default="", help="'yes' to also block ads with AdGuard DNS")
     p.add_argument("--days", type=int, default=30, help="an app unopened this many days counts as rarely used")

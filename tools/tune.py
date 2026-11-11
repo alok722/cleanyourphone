@@ -30,17 +30,33 @@ def _colorful_refresh(phone):
     ui.home(phone)
 
 
+# Row labels as regexes: realme UI 2.0 (Android 11) calls the second one "Transition animation zoom".
 ANIMATIONS = [
     ("window_animation_scale", "Window animation scale"),
-    ("transition_animation_scale", "Transition animation scale"),
+    ("transition_animation_scale", "Transition animation (scale|zoom)"),
     ("animator_duration_scale", "Animator duration scale"),
 ]
 
 MANUAL = {
     "animations": "Settings > About phone > tap Build number 7 times > Developer options > set Window animation "
-                  "scale, Transition animation scale and Animator duration scale to 0.5x",
+                  "scale, Transition animation scale (or zoom) and Animator duration scale to 0.5x",
     "refresh": "Settings > Display > Refresh rate (or Smooth display / Motion smoothness) > the highest option",
 }
+
+
+# realme UI, ColorOS and the OxygenOS builds based on it refuse `settings put` from adb unless this
+# Developer options switch is on. It turns itself off at every restart, so it is a hint, not a step.
+PERMISSION_MONITORING_SKINS = ("realme UI", "ColorOS", "OxygenOS")
+PERMISSION_MONITORING = ("this phone blocks settings changes over USB unless Developer options > 'Disable "
+                         "permission monitoring' is on (it switches itself off at every restart); turn it on and "
+                         "the blocked changes can be made with {retry}")
+
+
+def usb_unblock_hint(skin, retry):
+    """How to let adb change settings on this skin, or '' when there is no known switch."""
+    if skin.startswith(PERMISSION_MONITORING_SKINS):
+        return PERMISSION_MONITORING.format(retry=retry)
+    return ""
 
 
 def max_refresh(phone):

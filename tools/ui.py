@@ -71,18 +71,35 @@ def open_settings(phone, action):
     time.sleep(2.5)
 
 
-def scroll_to(phone, pattern, swipes=14, up=False):
-    """Scroll until an element matching pattern is on screen; its (x, y)."""
+def screen_size(phone):
+    """(width, height) in pixels as apps see it: `wm size` override first, then physical; 1080x2400 if unknown."""
+    out = phone.out("wm size")
+    m = re.search(r"Override size:\s*(\d+)x(\d+)", out) or re.search(r"Physical size:\s*(\d+)x(\d+)", out)
+    return (int(m.group(1)), int(m.group(2))) if m else (1080, 2400)
+
+
+def swipe_cmd(size, up=False, ms=250):
+    """A scroll swipe in the middle of this screen. Fixed pixels broke on 720x1600 phones (realme narzo 20):
+    a swipe starting below the bottom edge does nothing, so the list never moved."""
+    w, h = size
+    y1, y2 = (int(h * 0.3), int(h * 0.8)) if up else (int(h * 0.75), int(h * 0.35))
+    return "input swipe %d %d %d %d %d" % (w // 2, y1, w // 2, y2, ms)
+
+
+def scroll_to(phone, pattern, swipes=20, up=False):
+    """Scroll until an element matching pattern is on screen; its (x, y).
+
+    A slow drag, not a fling: a fast swipe keeps the list coasting after the finger lifts and can carry
+    a short row past the screen between two reads. A drag moves about 40% of the screen, so reads overlap.
+    """
+    swipe = swipe_cmd(screen_size(phone), up=up, ms=900)
     for _ in range(swipes):
         xy = find(phone, pattern)
         if xy:
             # A list still coasting from the last swipe eats the next tap, so let it settle and re-read.
             time.sleep(1.2)
             return find(phone, pattern) or xy
-        if up:
-            phone.out("input swipe 540 700 540 1900 250")
-        else:
-            phone.out("input swipe 540 1900 540 900 250")
+        phone.out(swipe)
         time.sleep(0.8)
     raise UiError("couldn't find '%s' on screen" % pattern)
 

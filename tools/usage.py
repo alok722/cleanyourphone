@@ -9,6 +9,8 @@ Background: Android sorts apps into standby buckets. `am set-standby-bucket <pkg
 an app in the strictest one (no background jobs, alarms or network while unused); the old bucket is
 journaled so `cmp restore` puts it back.
 """
+import json
+import os
 import re
 from datetime import datetime
 
@@ -64,10 +66,29 @@ def rarely_used(phone, protected, days=30):
     return sorted(found, key=lambda r: -r[1])
 
 
+_NAMES = None
+
+
+def known_names():
+    """{package: name} from data/app-names.json (adb has no app-label query)."""
+    global _NAMES
+    if _NAMES is None:
+        path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "app-names.json")
+        try:
+            with open(path, encoding="utf-8") as f:
+                _NAMES = {k: v for k, v in json.load(f).items() if not k.startswith("_")}
+        except (OSError, ValueError):
+            _NAMES = {}
+    return _NAMES
+
+
 def label(pkg):
-    """A readable name: the package's last meaningful part (adb has no app-label query)."""
+    """A readable name: a known one, else the package's last meaningful part, capitalised."""
+    if pkg in known_names():
+        return known_names()[pkg]
     parts = [p for p in pkg.split(".") if p not in ("com", "org", "in", "app", "android", "mobile", "customer")]
-    return (parts[-1] if parts else pkg).replace("_", " ")
+    name = (parts[-1] if parts else pkg).replace("_", " ")
+    return name[:1].upper() + name[1:]
 
 
 def bucket(phone, pkg):
